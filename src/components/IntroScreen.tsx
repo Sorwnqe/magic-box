@@ -10,6 +10,7 @@ import {
 } from '@react-three/drei'
 import { motion } from 'framer-motion'
 import * as THREE from 'three'
+import { fonts } from '../assets/fonts'
 import styled from '@emotion/styled'
 
 interface IntroScreenProps {
@@ -94,7 +95,7 @@ function MagicBox() {
           color="#ffffff"
           anchorX="center"
           anchorY="middle"
-          font="https://fonts.gstatic.com/s/orbitron/v29/yMJRMIlzdpvBhQQL_Qq7dy0.woff2"
+          font={fonts.orbitron}
         >
           ?
         </Text>
@@ -173,7 +174,7 @@ function FloatingNumber({ value, position, speed }: {
         color="#00d4ff"
         anchorX="center"
         anchorY="middle"
-        font="https://fonts.gstatic.com/s/orbitron/v29/yMJRMIlzdpvBhQQL_Qq7dy0.woff2"
+        font={fonts.orbitron}
         fillOpacity={0.3}
       >
         {value}
