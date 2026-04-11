@@ -1,0 +1,199 @@
+/* Google Fonts - 可爱圆润字体 */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+
+:root {
+  /* 糖果色彩系统 - 可爱版 */
+  --primary: #ff6b9d;        /* 粉色 */
+  --primary-dark: #e84a7f;
+  --primary-light: #ffb3c6;
+  --secondary: #a78bfa;      /* 紫色 */
+  --secondary-dark: #8b5cf6;
+  --accent: #6ee7b7;         /* 薄荷绿 */
+  --accent-alt: #fcd34d;     /* 金黄 */
+  --sky: #7dd3fc;            /* 天空蓝 */
+  --peach: #fdba74;          /* 桃色 */
+  --danger: #f87171;
+  
+  /* 可爱渐变 */
+  --gradient-candy: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+  --gradient-rainbow: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 20%, #ffecd2 40%, #a8edea 60%, #d299c2 80%, #fef9d7 100%);
+  --gradient-sky: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  --gradient-sunset: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  --gradient-magic: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-cute: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%);
+  
+  /* 背景色 - 明亮温馨 */
+  --bg-primary: #fef7ff;
+  --bg-secondary: #fdf4ff;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  
+  /* 文字色 */
+  --text-primary: #581c87;
+  --text-secondary: #7c3aed;
+  --text-muted: #a78bfa;
+  
+  /* 阴影 - 柔和 */
+  --shadow-soft: 0 4px 20px rgba(255, 107, 157, 0.15);
+  --shadow-card: 0 8px 30px rgba(167, 139, 250, 0.2);
+  --shadow-float: 0 15px 40px rgba(255, 107, 157, 0.25);
+  
+  /* 字体 */
+  --font-display: 'Nunito', sans-serif;
+  --font-heading: 'Nunito', sans-serif;
+  --font-body: 'Noto Sans SC', 'Nunito', sans-serif;
+  
+  /* 边框 */
+  --border-cute: 3px solid #ffb3c6;
+  --border-radius: 20px;
+  --border-radius-lg: 30px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, #fef7ff 0%, #fdf4ff 50%, #f5f3ff 100%);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  width: 100vw;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 可爱文字效果 */
+.cute-text {
+  color: var(--primary);
+  text-shadow: 2px 2px 4px rgba(255, 107, 157, 0.3);
+}
+
+.rainbow-text {
+  background: var(--gradient-rainbow);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbowShift 4s ease infinite;
+}
+
+@keyframes rainbowShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 玻璃态效果 - 可爱版 */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-soft);
+}
+
+/* 可爱按钮 */
+.cute-button {
+  position: relative;
+  padding: 16px 40px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  background: var(--gradient-candy);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.cute-button:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-float);
+}
+
+.cute-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 跳动动画 */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* 可爱浮动动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(2deg); }
+  75% { transform: translateY(-5px) rotate(-2deg); }
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 闪烁动画 */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* 心跳动画 */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.1); }
+}
+
+/* 摇摆动画 */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* 滚动条样式 - 可爱版 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fdf4ff;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff9a9e, #fecfef);
+  border-radius: 10px;
+  border: 2px solid #fdf4ff;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ff6b9d, #ff9a9e);
+}
+
+/* 选中文字样式 */
+::selection {
+  background: #ffb3c6;
+  color: #581c87;
+}
