@@ -13,14 +13,14 @@ interface Message {
 }
 
 // 可爱魔盒组件
-function CuteMagicBox({ 
-  isSpinning, 
-  isOpening, 
-  displayNumber 
-}: { 
+function CuteMagicBox({
+  isSpinning,
+  isOpening,
+  displayNumber
+}: {
   isSpinning: boolean
   isOpening: boolean
-  displayNumber: string 
+  displayNumber: string
 }) {
   return (
     <MagicBoxWrapper>
@@ -44,7 +44,7 @@ function CuteMagicBox({
             <LidBow>🎀</LidBow>
           </BoxLid>
         </BoxBody>
-        
+
         {/* 魔法光芒 */}
         {isOpening && (
           <MagicGlow
@@ -54,7 +54,7 @@ function CuteMagicBox({
           />
         )}
       </BoxContainer>
-      
+
       {/* 周围的星星装饰 */}
       <FloatingStar style={{ top: '10%', left: '10%' }} delay={0}>⭐</FloatingStar>
       <FloatingStar style={{ top: '20%', right: '15%' }} delay={0.3}>✨</FloatingStar>
@@ -91,11 +91,11 @@ function ChatMessage({ message }: { message: Message }) {
 }
 
 // 数字卡片组件
-function NumberCard({ 
-  label, 
-  number, 
-  tens, 
-  ones, 
+function NumberCard({
+  label,
+  number,
+  tens,
+  ones,
   isResult = false,
   visible = true,
   emoji
@@ -111,8 +111,8 @@ function NumberCard({
   return (
     <CardWrapper
       initial={{ opacity: 0, scale: 0.8, rotateY: 180 }}
-      animate={{ 
-        opacity: visible ? 1 : 0.5, 
+      animate={{
+        opacity: visible ? 1 : 0.5,
         scale: visible ? 1 : 0.9,
         rotateY: visible ? 0 : 180
       }}
@@ -166,7 +166,7 @@ export default function CuteMainApp() {
     setMessages(prev => [...prev, { id: typingId, type: 'bot', content: '', isTyping: true }])
 
     setTimeout(() => {
-      setMessages(prev => 
+      setMessages(prev =>
         prev.map(m => m.id === typingId ? { ...m, content, isTyping: false } : m)
       )
     }, delay)
@@ -180,7 +180,7 @@ export default function CuteMainApp() {
       origin: { y: 0.6 },
       colors: ['#ff6b9d', '#a78bfa', '#6ee7b7', '#fcd34d', '#7dd3fc', '#fdba74']
     })
-    
+
     // 添加星星效果
     confetti({
       particleCount: 30,
@@ -201,14 +201,14 @@ export default function CuteMainApp() {
       return
     }
 
-    setMessages(prev => [...prev, { 
-      id: Date.now(), 
-      type: 'user', 
-      content: `我输入了 ${validation.number} 🔢` 
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'user',
+      content: `我输入了 ${validation.number} 🔢`
     }])
 
     const result = magicBox.processNumber(validation.number!)
-    
+
     setDisplayNumber(result.input.toString())
     setCurrentInput({
       number: result.input.toString(),
@@ -227,14 +227,14 @@ export default function CuteMainApp() {
 
   const handleReveal = () => {
     const result = magicBox.openBox()
-    
+
     if (!result.success) {
       addBotMessage(`🤔 ${result.message}`)
       return
     }
 
     setIsOpening(true)
-    
+
     setTimeout(() => {
       setIsOpening(false)
       setDisplayNumber(result.output!.toString())
@@ -244,7 +244,7 @@ export default function CuteMainApp() {
         ones: result.outputOnes!.toString(),
         visible: true
       })
-      
+
       addBotMessage(`✨ ${result.message}`)
       setTimeout(() => {
         addBotMessage(`🌟 ${result.encouragement}`)
@@ -255,17 +255,17 @@ export default function CuteMainApp() {
 
   const handlePattern = () => {
     const result = magicBox.revealPattern()
-    
+
     if (!result.success) {
       addBotMessage(`💭 ${result.message}`)
       return
     }
 
     setIsOpening(true)
-    
+
     setTimeout(() => {
       setIsOpening(false)
-      
+
       if (result.results && result.results.length > 0) {
         const last = result.results[result.results.length - 1]
         setDisplayNumber(last.output.toString())
@@ -276,7 +276,7 @@ export default function CuteMainApp() {
           visible: true
         })
       }
-      
+
       addBotMessage(`🔮 ${result.message}`)
       setTimeout(() => {
         addBotMessage(result.explanation!.join('<br/>'))
@@ -305,40 +305,14 @@ export default function CuteMainApp() {
     >
       {/* 背景装饰 */}
       <BackgroundDecoration />
-      
-      {/* 顶部导航 */}
-      <Navbar>
-        <NavLogo>
-          <LogoEmoji>🎁</LogoEmoji>
-          <LogoText>数字魔盒</LogoText>
-        </NavLogo>
-        <NavTabs>
-          <NavTab active>
-            <span>🔮</span>
-            <span>交换魔法</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>🌟</span>
-            <span>即将开放</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>🎨</span>
-            <span>即将开放</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>🎯</span>
-            <span>即将开放</span>
-          </NavTab>
-        </NavTabs>
-      </Navbar>
 
       {/* 主内容 */}
       <MainContent>
         {/* 左侧 - 魔盒区 */}
         <LeftPanel>
           <MagicBoxArea>
-            <CuteMagicBox 
-              isSpinning={isSpinning} 
+            <CuteMagicBox
+              isSpinning={isSpinning}
               isOpening={isOpening}
               displayNumber={displayNumber}
             />
@@ -346,7 +320,7 @@ export default function CuteMainApp() {
 
           {/* 数字卡片 */}
           <CardsContainer>
-            <NumberCard 
+            <NumberCard
               label="输入的数"
               number={currentInput.number}
               tens={currentInput.tens}
@@ -362,7 +336,7 @@ export default function CuteMainApp() {
               </motion.span>
               <span>魔法变换</span>
             </SwapArrow>
-            <NumberCard 
+            <NumberCard
               label="魔法结果"
               number={currentOutput.number}
               tens={currentOutput.tens}
@@ -791,7 +765,7 @@ const ChatMessages = styled.div`
   padding: 20px;
 `
 
-const MessageWrapper = styled(motion.div)<{ isUser: boolean }>`
+const MessageWrapper = styled(motion.div) <{ isUser: boolean }>`
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -808,15 +782,15 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
   max-width: 80%;
   padding: 12px 18px;
   border-radius: 20px;
-  background: ${props => props.isUser 
-    ? 'linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%)' 
+  background: ${props => props.isUser
+    ? 'linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%)'
     : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)'};
   color: ${props => props.isUser ? 'white' : '#581c87'};
   font-family: 'Noto Sans SC', sans-serif;
   font-size: 15px;
   line-height: 1.5;
-  box-shadow: 0 4px 15px ${props => props.isUser 
-    ? 'rgba(255, 107, 157, 0.2)' 
+  box-shadow: 0 4px 15px ${props => props.isUser
+    ? 'rgba(255, 107, 157, 0.2)'
     : 'rgba(0, 0, 0, 0.05)'};
 `
 
@@ -918,13 +892,13 @@ const ActionButton = styled.button<{ color: string }>`
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px ${props => {
-      switch (props.color) {
-        case 'pink': return 'rgba(255, 107, 157, 0.4)'
-        case 'purple': return 'rgba(167, 139, 250, 0.4)'
-        case 'mint': return 'rgba(110, 231, 183, 0.4)'
-        default: return 'rgba(255, 107, 157, 0.4)'
-      }
-    }};
+    switch (props.color) {
+      case 'pink': return 'rgba(255, 107, 157, 0.4)'
+      case 'purple': return 'rgba(167, 139, 250, 0.4)'
+      case 'mint': return 'rgba(110, 231, 183, 0.4)'
+      default: return 'rgba(255, 107, 157, 0.4)'
+    }
+  }};
   }
   
   &:active {

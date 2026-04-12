@@ -2,12 +2,12 @@ import { useState, useRef, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { 
   Float, 
-  MeshTransmissionMaterial,
   Environment,
   Sparkles,
   Text,
   OrbitControls
 } from '@react-three/drei'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import confetti from 'canvas-confetti'
@@ -22,7 +22,29 @@ interface Message {
   isTyping?: boolean
 }
 
-// 3D 魔盒组件
+// 错误边界组件
+class CanvasErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
+}
+
+// 3D 魔盒组件 - 简化版（兼容性更好）
 function MagicBox3D({ 
   isSpinning, 
   isOpening, 
@@ -63,21 +85,28 @@ function MagicBox3D({
           <meshBasicMaterial color="#ff00ff" transparent opacity={0.4} />
         </mesh>
         
-        {/* 魔盒主体 */}
+        {/* 魔盒主体 - 使用兼容性更好的材质 */}
         <mesh ref={boxRef}>
           <boxGeometry args={[1.5, 1.5, 1.5]} />
-          <MeshTransmissionMaterial
-            backside
-            samples={8}
-            thickness={0.3}
-            chromaticAberration={0.3}
-            anisotropy={0.2}
-            distortion={0.3}
-            distortionScale={0.3}
-            iridescence={1}
-            iridescenceIOR={1}
-            iridescenceThicknessRange={[0, 1400]}
+          <meshStandardMaterial
             color="#4060ff"
+            metalness={0.3}
+            roughness={0.2}
+            transparent
+            opacity={0.85}
+            emissive="#2040aa"
+            emissiveIntensity={0.3}
+          />
+        </mesh>
+        
+        {/* 魔盒边缘发光效果 */}
+        <mesh>
+          <boxGeometry args={[1.55, 1.55, 1.55]} />
+          <meshBasicMaterial
+            color="#00d4ff"
+            transparent
+            opacity={0.15}
+            wireframe
           />
         </mesh>
 
@@ -108,6 +137,18 @@ function MagicBox3D({
         />
       </group>
     </Float>
+  )
+}
+
+// 2D 回退版魔盒
+function MagicBox2DFallback({ displayNumber }: { displayNumber: string }) {
+  return (
+    <FallbackBox>
+      <FallbackBoxInner>
+        <img src={items.magicBox} alt="魔盒" style={{ width: '150px', height: 'auto' }} />
+        <FallbackNumber>{displayNumber}</FallbackNumber>
+      </FallbackBoxInner>
+    </FallbackBox>
   )
 }
 
@@ -344,53 +385,27 @@ export default function MainApp() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* 导航栏 */}
-      <Navbar>
-        <NavLogo>
-          <LogoBoxContainer>
-            <img src={items.magicBox} alt="魔盒" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </LogoBoxContainer>
-          <LogoText>数字魔盒</LogoText>
-        </NavLogo>
-        <NavTabs>
-          <NavTab active>
-            <span>🎲</span>
-            <span>交换魔法</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>🔮</span>
-            <span>即将开放</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>⭐</span>
-            <span>即将开放</span>
-          </NavTab>
-          <NavTab disabled>
-            <span>🎯</span>
-            <span>即将开放</span>
-          </NavTab>
-        </NavTabs>
-      </Navbar>
-
-      {/* 主内容区 */}
+      {/* 主内容区 - 一屏布局 */}
       <MainContent>
-        {/* 左侧 - 3D魔盒 */}
+        {/* 左侧 - 3D魔盒 + 数字卡片 */}
         <LeftPanel>
           <CanvasContainer>
-            <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
-              <Suspense fallback={null}>
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={1} color="#00d4ff" />
-                <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff00ff" />
-                <Environment preset="night" />
-                <MagicBox3D 
-                  isSpinning={isSpinning} 
-                  isOpening={isOpening}
-                  displayNumber={displayNumber}
-                />
-                <OrbitControls enableZoom={false} enablePan={false} />
-              </Suspense>
-            </Canvas>
+            <CanvasErrorBoundary fallback={<MagicBox2DFallback displayNumber={displayNumber} />}>
+              <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
+                <Suspense fallback={null}>
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[10, 10, 10]} intensity={1} color="#00d4ff" />
+                  <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff00ff" />
+                  <Environment preset="night" />
+                  <MagicBox3D 
+                    isSpinning={isSpinning} 
+                    isOpening={isOpening}
+                    displayNumber={displayNumber}
+                  />
+                  <OrbitControls enableZoom={false} enablePan={false} />
+                </Suspense>
+              </Canvas>
+            </CanvasErrorBoundary>
           </CanvasContainer>
 
           {/* 数字卡片 */}
@@ -402,7 +417,7 @@ export default function MainApp() {
               ones={currentInput.ones}
             />
             <SwapArrow>
-              <svg viewBox="0 0 100 40" width="80" height="32">
+              <svg viewBox="0 0 100 40" width="60" height="24">
                 <path d="M10,20 Q50,5 90,20" fill="none" stroke="url(#grad)" strokeWidth="2"/>
                 <path d="M10,20 Q50,35 90,20" fill="none" stroke="url(#grad)" strokeWidth="2"/>
                 <defs>
@@ -425,7 +440,68 @@ export default function MainApp() {
           </CardsContainer>
         </LeftPanel>
 
-        {/* 右侧 - 交互区 */}
+        {/* 中间 - 输入区 + 数字键盘 */}
+        <CenterPanel>
+          {/* 输入显示 */}
+          <InputDisplay>
+            <InputDisplayNumber>{inputValue || '--'}</InputDisplayNumber>
+            <InputDisplayLabel>输入两位数</InputDisplayLabel>
+          </InputDisplay>
+          
+          {/* 数字键盘 */}
+          <KeypadContainer>
+            <KeypadGrid>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                <KeypadButton 
+                  key={num} 
+                  onClick={() => inputValue.length < 2 && setInputValue(inputValue + num)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {num}
+                </KeypadButton>
+              ))}
+              <KeypadButton 
+                onClick={() => setInputValue('')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ background: 'rgba(255, 71, 87, 0.2)', color: '#ff4757' }}
+              >
+                清除
+              </KeypadButton>
+              <KeypadButton 
+                onClick={() => inputValue.length < 2 && setInputValue(inputValue + '0')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                0
+              </KeypadButton>
+              <KeypadButton 
+                onClick={() => setInputValue(inputValue.slice(0, -1))}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ background: 'rgba(251, 191, 36, 0.2)', color: '#f59e0b' }}
+              >
+                ←
+              </KeypadButton>
+            </KeypadGrid>
+          </KeypadContainer>
+          
+          {/* 操作按钮 */}
+          <ButtonGroup>
+            <ActionButton color="primary" onClick={handleSubmit}>
+              <span>🎲</span> 放入魔盒
+            </ActionButton>
+            <ActionButton color="secondary" onClick={handleReveal}>
+              <span>🔓</span> 打开魔盒
+            </ActionButton>
+            <ActionButton color="accent" onClick={handlePattern}>
+              <span>💡</span> 揭示规律
+            </ActionButton>
+          </ButtonGroup>
+        </CenterPanel>
+
+        {/* 右侧 - 聊天区 + 历史 */}
         <RightPanel>
           {/* 聊天区 */}
           <ChatContainer>
@@ -439,32 +515,6 @@ export default function MainApp() {
             </ChatMessages>
           </ChatContainer>
 
-          {/* 输入区 */}
-          <InputArea>
-            <InputWrapper>
-              <NumberInput
-                type="text"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value.replace(/[^0-9]/g, ''))}
-                onKeyPress={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="输入两位数..."
-                maxLength={2}
-              />
-              <InputIcon>⭐</InputIcon>
-            </InputWrapper>
-            <ButtonGroup>
-              <ActionButton color="primary" onClick={handleSubmit}>
-                <span>🎲</span> 放入魔盒
-              </ActionButton>
-              <ActionButton color="secondary" onClick={handleReveal}>
-                <span>🔓</span> 打开魔盒
-              </ActionButton>
-              <ActionButton color="accent" onClick={handlePattern}>
-                <span>💡</span> 揭示规律
-              </ActionButton>
-            </ButtonGroup>
-          </InputArea>
-
           {/* 历史记录 */}
           <HistoryPanel>
             <HistoryHeader>
@@ -473,7 +523,7 @@ export default function MainApp() {
             </HistoryHeader>
             <HistoryList>
               {magicBox.history.length === 0 ? (
-                <HistoryEmpty>还没有记录哦，快来试试吧！</HistoryEmpty>
+                <HistoryEmpty>还没有记录</HistoryEmpty>
               ) : (
                 magicBox.history.map((item, index) => (
                   <HistoryItem key={index}>
@@ -527,14 +577,14 @@ const Navbar = styled.nav`
   top: 0;
   left: 0;
   right: 0;
-  height: 70px;
+  height: 50px;
   background: rgba(30, 64, 175, 0.95);
   backdrop-filter: blur(20px);
   border-bottom: 2px solid ${COLORS.primaryLight};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
+  padding: 0 20px;
   z-index: 100;
 `
 
@@ -590,16 +640,20 @@ const NavTab = styled.button<{ active?: boolean; disabled?: boolean }>`
 
 const MainContent = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  padding: 100px 30px 30px;
-  max-width: 1600px;
+  grid-template-columns: 1.2fr 0.8fr 1fr;
+  gap: 15px;
+  padding: 60px 15px 15px;
+  max-width: 1400px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: calc(100vh - 10px);
   position: relative;
   z-index: 1;
   
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `
@@ -607,11 +661,18 @@ const MainContent = styled.div`
 const LeftPanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 12px;
+`
+
+const CenterPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `
 
 const CanvasContainer = styled.div`
-  height: 400px;
+  flex: 1;
+  min-height: 200px;
   background: linear-gradient(135deg, rgba(30, 64, 175, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%);
   border-radius: 24px;
   border: 2px solid ${COLORS.primaryLight};
@@ -619,35 +680,68 @@ const CanvasContainer = styled.div`
   box-shadow: 0 10px 40px rgba(30, 64, 175, 0.3);
 `
 
+// 2D回退版魔盒样式
+const FallbackBox = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`
+
+const FallbackBoxInner = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: float 3s ease-in-out infinite;
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+`
+
+const FallbackNumber = styled.div`
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.5);
+`
+
 const CardsContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 10px;
   flex-wrap: wrap;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 2px solid ${COLORS.primaryLight};
 `
 
 const CardWrapper = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
   border: 2px solid ${COLORS.primaryLight};
-  border-radius: 20px;
-  padding: 20px 30px;
+  border-radius: 12px;
+  padding: 10px 15px;
   text-align: center;
-  min-width: 160px;
-  box-shadow: 0 5px 20px rgba(30, 64, 175, 0.15);
+  min-width: 100px;
 `
 
 const CardLabel = styled.div`
-  font-size: 14px;
+  font-size: 11px;
   color: ${COLORS.textSecondary};
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-weight: 600;
 `
 
 const CardNumber = styled.div<{ isResult?: boolean }>`
   font-family: var(--font-display);
-  font-size: 48px;
+  font-size: 28px;
   font-weight: 700;
   background: ${props => props.isResult 
     ? `linear-gradient(135deg, ${COLORS.success}, ${COLORS.primaryLight})` 
@@ -655,32 +749,32 @@ const CardNumber = styled.div<{ isResult?: boolean }>`
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 15px;
+  margin-bottom: 6px;
 `
 
 const DigitBoxes = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 6px;
   justify-content: center;
 `
 
 const DigitBox = styled.div<{ color: string }>`
   background: rgba(30, 64, 175, 0.1);
   border: 2px solid ${props => props.color};
-  border-radius: 12px;
-  padding: 10px 15px;
-  min-width: 50px;
+  border-radius: 8px;
+  padding: 4px 8px;
+  min-width: 35px;
 `
 
 const DigitLabel = styled.div`
-  font-size: 11px;
+  font-size: 9px;
   color: ${COLORS.textSecondary};
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 `
 
 const DigitValue = styled.div`
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 600;
   color: ${COLORS.textPrimary};
 `
@@ -689,20 +783,80 @@ const SwapArrow = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 2px;
   
   span {
-    font-size: 12px;
+    font-size: 10px;
     color: ${COLORS.accent};
     font-weight: 600;
+  }
+`
+
+// 输入显示区
+const InputDisplay = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 2px solid ${COLORS.primaryLight};
+  border-radius: 16px;
+  padding: 15px;
+  text-align: center;
+`
+
+const InputDisplayNumber = styled.div`
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 800;
+  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  min-height: 60px;
+`
+
+const InputDisplayLabel = styled.div`
+  font-size: 12px;
+  color: ${COLORS.textSecondary};
+  margin-top: 5px;
+`
+
+// 数字键盘
+const KeypadContainer = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 2px solid ${COLORS.primaryLight};
+  border-radius: 16px;
+  padding: 12px;
+  flex: 1;
+`
+
+const KeypadGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  height: 100%;
+`
+
+const KeypadButton = styled(motion.button)`
+  background: rgba(30, 64, 175, 0.1);
+  border: 2px solid ${COLORS.primaryLight};
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: ${COLORS.primary};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(30, 64, 175, 0.2);
+    border-color: ${COLORS.primary};
   }
 `
 
 const RightPanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-height: calc(100vh - 130px);
+  gap: 12px;
 `
 
 const ChatContainer = styled.div`
@@ -710,21 +864,20 @@ const ChatContainer = styled.div`
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   border: 2px solid ${COLORS.primaryLight};
-  border-radius: 24px;
+  border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 300px;
-  box-shadow: 0 5px 25px rgba(30, 64, 175, 0.15);
+  min-height: 150px;
 `
 
 const ChatMessages = styled.div`
   flex: 1;
-  padding: 20px;
+  padding: 12px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 `
 
 const MessageWrapper = styled(motion.div)<{ isUser: boolean }>`
@@ -746,8 +899,8 @@ const Avatar = styled.div`
 `
 
 const AvatarImg = styled.img`
-  width: 45px;
-  height: 45px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid ${COLORS.primaryLight};
@@ -755,16 +908,16 @@ const AvatarImg = styled.img`
 `
 
 const MessageBubble = styled.div<{ isUser: boolean }>`
-  max-width: 80%;
-  padding: 15px 20px;
-  border-radius: ${props => props.isUser ? '20px 20px 5px 20px' : '20px 20px 20px 5px'};
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: ${props => props.isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};
   background: ${props => props.isUser 
     ? `linear-gradient(135deg, ${COLORS.primaryLight}, ${COLORS.purple})` 
     : '#f0f9ff'};
   border: 1px solid ${props => props.isUser ? COLORS.primary : '#e0f2fe'};
   color: ${props => props.isUser ? 'white' : COLORS.textPrimary};
-  line-height: 1.6;
-  font-size: 15px;
+  line-height: 1.5;
+  font-size: 13px;
 `
 
 const TypingIndicator = styled.div`
@@ -787,64 +940,16 @@ const TypingDot = styled.div<{ delay: number }>`
   }
 `
 
-const InputArea = styled.div`
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  border: 2px solid ${COLORS.primaryLight};
-  border-radius: 24px;
-  padding: 20px;
-  box-shadow: 0 5px 20px rgba(30, 64, 175, 0.1);
-`
-
-const InputWrapper = styled.div`
-  position: relative;
-  margin-bottom: 15px;
-`
-
-const NumberInput = styled.input`
-  width: 100%;
-  padding: 15px 50px 15px 20px;
-  background: #f0f9ff;
-  border: 2px solid ${COLORS.primaryLight};
-  border-radius: 15px;
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-  text-align: center;
-  outline: none;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    border-color: ${COLORS.primary};
-    box-shadow: 0 0 20px rgba(30, 64, 175, 0.2);
-  }
-  
-  &::placeholder {
-    color: ${COLORS.textMuted};
-    font-weight: 400;
-  }
-`
-
-const InputIcon = styled.span`
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 24px;
-  animation: spin 3s linear infinite;
-`
-
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 `
 
 const ActionButton = styled.button<{ color: string }>`
   flex: 1;
-  min-width: 120px;
-  padding: 12px 20px;
+  min-width: 80px;
+  padding: 10px 12px;
   background: ${props => {
     switch (props.color) {
       case 'primary': return `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight})`
@@ -895,17 +1000,17 @@ const HistoryPanel = styled.div`
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   border: 2px solid ${COLORS.primaryLight};
-  border-radius: 24px;
-  padding: 15px 20px;
-  box-shadow: 0 5px 20px rgba(30, 64, 175, 0.1);
+  border-radius: 16px;
+  padding: 10px 12px;
 `
 
 const HistoryHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   font-weight: 600;
+  font-size: 13px;
 `
 
 const ClearButton = styled.button`
@@ -925,26 +1030,26 @@ const ClearButton = styled.button`
 
 const HistoryList = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  max-height: 60px;
+  max-height: 50px;
   overflow-y: auto;
 `
 
 const HistoryEmpty = styled.div`
   color: ${COLORS.textMuted};
-  font-size: 14px;
+  font-size: 12px;
 `
 
 const HistoryItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 10px;
   background: rgba(30, 64, 175, 0.1);
   border: 1px solid ${COLORS.primaryLight};
-  border-radius: 15px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
   color: ${COLORS.textPrimary};
 `

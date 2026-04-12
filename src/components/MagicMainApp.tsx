@@ -1,152 +1,88 @@
-import { useState, useRef, useEffect, Suspense } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import {
-  Float,
-  MeshTransmissionMaterial,
-  RoundedBox,
-  Sparkles,
-  Text,
-  Environment
-} from '@react-three/drei'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
-import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
-import * as THREE from 'three'
 import { useMagicBox } from '../stores/useMagicBox'
-import { characters } from '../assets/images'
+import { backgrounds, zootopiaColors as COLORS } from '../assets/images'
+import { IoArrowDown, IoBackspace } from 'react-icons/io5'
+import { MdClear } from 'react-icons/md'
 
-// 背景粒子特效组件
-function ParticleBackground() {
+// 线性粒子背景
+function ParticleLines() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     const resize = () => {
-      canvas.width = window.innerWidth * window.devicePixelRatio
-      canvas.height = window.innerHeight * window.devicePixelRatio
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
     }
     resize()
     window.addEventListener('resize', resize)
 
-    const width = window.innerWidth
-    const height = window.innerHeight
-
+    const colors = ['#3b82f6', '#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b']
+    
     interface Particle {
-      x: number
-      y: number
-      vx: number
-      vy: number
-      size: number
-      color: string
-      alpha: number
-      type: 'circle' | 'star' | 'dot'
-      pulse: number
-      pulseSpeed: number
+      x: number; y: number; vx: number; vy: number
+      color: string; size: number
     }
-
-    const colors = ['#3b82f6', '#22c55e', '#facc15', '#fb923c', '#22d3ee', '#a78bfa', '#f472b6']
-
-    // 创建粒子
+    
     const particles: Particle[] = []
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 50; i++) {
       particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 6 + 2,
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: (Math.random() - 0.5) * 1.2,
         color: colors[Math.floor(Math.random() * colors.length)],
-        alpha: Math.random() * 0.5 + 0.2,
-        type: ['circle', 'star', 'dot'][Math.floor(Math.random() * 3)] as Particle['type'],
-        pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: Math.random() * 0.05 + 0.02
+        size: Math.random() * 3 + 1.5
       })
     }
-
-    // 绘制星星
-    const drawStar = (x: number, y: number, size: number, color: string, alpha: number) => {
-      ctx.save()
-      ctx.globalAlpha = alpha
-      ctx.fillStyle = color
-      ctx.translate(x, y)
-      ctx.beginPath()
-      for (let i = 0; i < 4; i++) {
-        const angle = (i * Math.PI) / 2
-        ctx.moveTo(0, 0)
-        ctx.lineTo(Math.cos(angle) * size, Math.sin(angle) * size)
-      }
-      ctx.strokeStyle = color
-      ctx.lineWidth = 2
-      ctx.stroke()
-      ctx.restore()
-    }
-
-    // 连线距离
-    const connectionDistance = 120
 
     let animationId: number
     const animate = () => {
-      ctx.clearRect(0, 0, width, height)
-
-      // 更新和绘制粒子
-      particles.forEach((p, i) => {
-        p.x += p.vx
-        p.y += p.vy
-        p.pulse += p.pulseSpeed
-
-        // 边界反弹
-        if (p.x < 0 || p.x > width) p.vx *= -1
-        if (p.y < 0 || p.y > height) p.vy *= -1
-
-        const pulseAlpha = p.alpha * (0.7 + Math.sin(p.pulse) * 0.3)
-        const pulseSize = p.size * (0.8 + Math.sin(p.pulse) * 0.2)
-
-        ctx.globalAlpha = pulseAlpha
-
-        if (p.type === 'circle') {
-          ctx.beginPath()
-          ctx.arc(p.x, p.y, pulseSize, 0, Math.PI * 2)
-          ctx.fillStyle = p.color
-          ctx.fill()
-        } else if (p.type === 'star') {
-          drawStar(p.x, p.y, pulseSize, p.color, pulseAlpha)
-        } else {
-          ctx.beginPath()
-          ctx.arc(p.x, p.y, pulseSize * 0.5, 0, Math.PI * 2)
-          ctx.fillStyle = p.color
-          ctx.fill()
-        }
-
-        // 绘制连线
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i]
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j]
-          const dx = p.x - p2.x
-          const dy = p.y - p2.y
+          const dx = p1.x - p2.x
+          const dy = p1.y - p2.y
           const dist = Math.sqrt(dx * dx + dy * dy)
-
-          if (dist < connectionDistance) {
-            ctx.globalAlpha = (1 - dist / connectionDistance) * 0.15
+          
+          if (dist < 180) {
             ctx.beginPath()
-            ctx.moveTo(p.x, p.y)
+            ctx.moveTo(p1.x, p1.y)
             ctx.lineTo(p2.x, p2.y)
-            ctx.strokeStyle = p.color
-            ctx.lineWidth = 1
+            const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y)
+            gradient.addColorStop(0, p1.color + '30')
+            gradient.addColorStop(1, p2.color + '30')
+            ctx.strokeStyle = gradient
+            ctx.lineWidth = 1.5
             ctx.stroke()
           }
         }
+      }
+      
+      particles.forEach(p => {
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+        
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        ctx.fillStyle = p.color + '60'
+        ctx.fill()
       })
-
-      ctx.globalAlpha = 1
+      
       animationId = requestAnimationFrame(animate)
     }
-
     animate()
 
     return () => {
@@ -158,1009 +94,930 @@ function ParticleBackground() {
   return <ParticleCanvas ref={canvasRef} />
 }
 
-const ParticleCanvas = styled.canvas`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-`
-
-// 中性可爱配色
-const COLORS = {
-  blue: '#3b82f6',
-  lightBlue: '#60a5fa',
-  cyan: '#22d3ee',
-  green: '#22c55e',
-  lime: '#a3e635',
-  yellow: '#facc15',
-  orange: '#fb923c',
-  purple: '#a78bfa'
+// 魔法粒子类型
+interface MagicParticle {
+  x: number; y: number; vx: number; vy: number
+  size: number; color: string; alpha: number; life: number
 }
 
-interface Message {
-  id: number
-  type: 'bot' | 'user'
-  content: string
-  isTyping?: boolean
+// 飞入数字动画状态
+interface FlyingNumber {
+  num: string
+  progress: number  // 0-1
+  startX: number
+  startY: number
 }
 
-// 3D 可爱魔盒组件 - 增强版
-function CuteMagicBox3D({
-  isSpinning,
-  isOpening,
-  displayNumber
-}: {
+// 弹出数字动画状态
+interface PoppingNumber {
+  num: string
+  progress: number  // 0-1
+  scale: number
+  y: number
+}
+
+// 2D Canvas 魔法盒组件
+function MagicBoxCanvas({ 
+  isSpinning, 
+  isOpening, 
+  displayNumber,
+  hasNumber,
+  flyingNumber,
+  poppingNumber
+}: { 
   isSpinning: boolean
   isOpening: boolean
   displayNumber: string
+  hasNumber: boolean
+  flyingNumber: FlyingNumber | null
+  poppingNumber: PoppingNumber | null
 }) {
-  const groupRef = useRef<THREE.Group>(null)
-  const lidRef = useRef<THREE.Group>(null)
-  const ring1Ref = useRef<THREE.Mesh>(null)
-  const ring2Ref = useRef<THREE.Mesh>(null)
-  const ring3Ref = useRef<THREE.Mesh>(null)
-
-  useFrame((state) => {
-    const time = state.clock.elapsedTime
-
-    if (groupRef.current) {
-      // 更明显的浮动效果
-      groupRef.current.position.y = Math.sin(time * 1.5) * 0.15
-
-      if (isSpinning) {
-        groupRef.current.rotation.y += 0.12
-        groupRef.current.rotation.z = Math.sin(time * 5) * 0.1
-      } else if (isOpening) {
-        groupRef.current.rotation.y += 0.08
-        const bounce = Math.sin(time * 8) * 0.05
-        groupRef.current.scale.setScalar(1 + bounce)
-      } else {
-        groupRef.current.rotation.y += 0.008
-        groupRef.current.rotation.x = Math.sin(time * 0.5) * 0.08
-        groupRef.current.rotation.z = Math.sin(time * 0.3) * 0.03
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>(0)
+  const lidAngleRef = useRef(0)
+  const particlesRef = useRef<MagicParticle[]>([])
+  const floatPhaseRef = useRef(0)
+  const spinAngleRef = useRef(0)
+  
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // 使用 CSS 尺寸（逻辑像素）
+    const rect = canvas.getBoundingClientRect()
+    const w = rect.width
+    const h = rect.height
+    
+    // 如果尺寸无效，跳过绘制
+    if (w <= 0 || h <= 0) {
+      animationRef.current = requestAnimationFrame(draw)
+      return
+    }
+    
+    // 魔盒位置 - Canvas 中心
+    const cx = w * 0.5
+    const cy = h * 0.5
+    
+    ctx.clearRect(0, 0, w, h)
+    
+    // 更新浮动相位
+    floatPhaseRef.current += 0.02
+    const floatY = Math.sin(floatPhaseRef.current) * 8
+    
+    // 旋转动画
+    if (isSpinning) {
+      spinAngleRef.current += 0.15
+    } else {
+      spinAngleRef.current *= 0.95
+    }
+    
+    // 盖子打开动画
+    if (isOpening) {
+      lidAngleRef.current = Math.min(lidAngleRef.current + 0.1, Math.PI * 0.7)
+      // 适量魔法粒子
+      if (Math.random() < 0.3 && particlesRef.current.length < 30) {
+        const colors = ['#fbbf24', '#22c55e', '#8b5cf6']
+        particlesRef.current.push({
+          x: cx + (Math.random() - 0.5) * 100,
+          y: cy - 80 + floatY,
+          vx: (Math.random() - 0.5) * 8,
+          vy: -Math.random() * 10 - 5,
+          size: Math.random() * 10 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          life: 50
+        })
+      }
+    } else {
+      lidAngleRef.current = Math.max(lidAngleRef.current - 0.08, 0)
+    }
+    
+    // 更新并绘制粒子
+    particlesRef.current = particlesRef.current.filter(p => {
+      p.x += p.vx
+      p.y += p.vy
+      p.vy += 0.25 // 重力
+      p.life--
+      p.alpha = Math.min(p.life / 40, 1)
+      
+      if (p.life <= 0) return false
+      
+      ctx.save()
+      ctx.globalAlpha = p.alpha
+      ctx.beginPath()
+      // 星星形状
+      const spikes = 5
+      const outerRadius = p.size
+      const innerRadius = p.size / 2
+      for (let i = 0; i < spikes * 2; i++) {
+        const radius = i % 2 === 0 ? outerRadius : innerRadius
+        const angle = (i * Math.PI) / spikes - Math.PI / 2
+        const x = p.x + Math.cos(angle) * radius
+        const y = p.y + Math.sin(angle) * radius
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+      ctx.fillStyle = p.color
+      ctx.shadowColor = p.color
+      ctx.shadowBlur = 15
+      ctx.fill()
+      ctx.restore()
+      
+      return true
+    })
+    
+    ctx.save()
+    ctx.translate(cx, cy + floatY)
+    ctx.rotate(spinAngleRef.current)
+    
+    // 外圈光晕 - 更大
+    const glowGradient = ctx.createRadialGradient(0, 0, 100, 0, 0, 250)
+    glowGradient.addColorStop(0, 'rgba(139, 92, 246, 0.35)')
+    glowGradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.18)')
+    glowGradient.addColorStop(1, 'rgba(139, 92, 246, 0)')
+    ctx.fillStyle = glowGradient
+    ctx.fillRect(-280, -280, 560, 560)
+    
+    // 装饰圆环 - 更大
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(0, 0, 180, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.35)'
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.arc(0, 0, 210, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 魔盒主体 - 更大尺寸
+    const boxSize = 160
+    const boxTop = -40
+    
+    // 盒子阴影
+    ctx.save()
+    ctx.shadowColor = 'rgba(139, 92, 246, 0.5)'
+    ctx.shadowBlur = 30
+    ctx.shadowOffsetY = 15
+    
+    // 盒子主体 - 渐变填充
+    const boxGradient = ctx.createLinearGradient(-boxSize/2, boxTop, boxSize/2, boxTop + boxSize)
+    boxGradient.addColorStop(0, '#a78bfa')
+    boxGradient.addColorStop(0.3, '#8b5cf6')
+    boxGradient.addColorStop(0.7, '#7c3aed')
+    boxGradient.addColorStop(1, '#6d28d9')
+    
+    ctx.fillStyle = boxGradient
+    ctx.beginPath()
+    ctx.roundRect(-boxSize/2, boxTop, boxSize, boxSize, 12)
+    ctx.fill()
+    ctx.restore()
+    
+    // 盒子装饰线
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.roundRect(-boxSize/2 + 8, boxTop + 8, boxSize - 16, boxSize - 16, 8)
+    ctx.stroke()
+    
+    // 金色装饰带
+    ctx.fillStyle = '#fbbf24'
+    ctx.fillRect(-8, boxTop, 16, boxSize)
+    ctx.fillRect(-boxSize/2, boxTop + boxSize/2 - 8, boxSize, 16)
+    
+    // 中心宝石
+    const gemGradient = ctx.createRadialGradient(0, boxTop + boxSize/2, 0, 0, boxTop + boxSize/2, 25)
+    gemGradient.addColorStop(0, '#fef3c7')
+    gemGradient.addColorStop(0.5, '#fbbf24')
+    gemGradient.addColorStop(1, '#d97706')
+    ctx.fillStyle = gemGradient
+    ctx.beginPath()
+    ctx.arc(0, boxTop + boxSize/2, 20, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    
+    // 盒盖（可打开）
+    ctx.save()
+    ctx.translate(0, boxTop)
+    ctx.rotate(-lidAngleRef.current)
+    
+    const lidHeight = 32
+    const lidGradient = ctx.createLinearGradient(-boxSize/2 - 5, -lidHeight, boxSize/2 + 5, 0)
+    lidGradient.addColorStop(0, '#c4b5fd')
+    lidGradient.addColorStop(0.5, '#a78bfa')
+    lidGradient.addColorStop(1, '#8b5cf6')
+    
+    ctx.fillStyle = lidGradient
+    ctx.beginPath()
+    ctx.roundRect(-boxSize/2 - 5, -lidHeight, boxSize + 10, lidHeight, [12, 12, 4, 4])
+    ctx.fill()
+    
+    // 盒盖装饰
+    ctx.fillStyle = '#fbbf24'
+    ctx.fillRect(-8, -lidHeight, 16, lidHeight)
+    
+    // 盒盖顶部宝石
+    const topGemGradient = ctx.createRadialGradient(0, -lidHeight/2, 0, 0, -lidHeight/2, 12)
+    topGemGradient.addColorStop(0, '#fef3c7')
+    topGemGradient.addColorStop(0.5, '#fbbf24')
+    topGemGradient.addColorStop(1, '#d97706')
+    ctx.fillStyle = topGemGradient
+    ctx.beginPath()
+    ctx.arc(0, -lidHeight/2, 10, 0, Math.PI * 2)
+    ctx.fill()
+    
+    ctx.restore()
+    
+    // 显示盒子里的数字（在盒子表面，只有当有数字且未打开时显示）
+    if (hasNumber && !isOpening && !flyingNumber && displayNumber !== '?') {
+      ctx.save()
+      ctx.font = 'bold 52px var(--font-display), system-ui'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = 'rgba(255,255,255,0.95)'
+      ctx.shadowColor = 'rgba(139, 92, 246, 0.6)'
+      ctx.shadowBlur = 10
+      ctx.fillText(displayNumber, 0, boxTop + boxSize/2 + 2)
+      ctx.restore()
+    }
+    
+    ctx.restore()
+    
+    // 数字飞入动画 - 贝塞尔曲线，更大更震撼
+    if (flyingNumber) {
+      const t = flyingNumber.progress
+      // 贝塞尔曲线控制点 - 更大的弧度
+      const startX = flyingNumber.startX
+      const startY = flyingNumber.startY
+      const endX = cx
+      const endY = cy + floatY + 40
+      const cp1X = startX - 100
+      const cp1Y = startY - 250
+      const cp2X = endX + 150
+      const cp2Y = endY - 300
+      
+      // 三次贝塞尔曲线
+      const mt = 1 - t
+      const x = mt*mt*mt*startX + 3*mt*mt*t*cp1X + 3*mt*t*t*cp2X + t*t*t*endX
+      const y = mt*mt*mt*startY + 3*mt*mt*t*cp1Y + 3*mt*t*t*cp2Y + t*t*t*endY
+      
+      // 缩放效果 - 开始更大
+      const scale = 2.0 - t * 1.3
+      // 旋转效果
+      const rotation = t * Math.PI * 4
+      
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(rotation)
+      ctx.scale(scale, scale)
+      
+      // 超强发光效果
+      ctx.shadowColor = '#fbbf24'
+      ctx.shadowBlur = 100
+      
+      // 大光球效果
+      const bgGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 120)
+      bgGrad.addColorStop(0, 'rgba(251, 191, 36, 1)')
+      bgGrad.addColorStop(0.2, 'rgba(251, 191, 36, 0.8)')
+      bgGrad.addColorStop(0.4, 'rgba(139, 92, 246, 0.5)')
+      bgGrad.addColorStop(0.7, 'rgba(139, 92, 246, 0.2)')
+      bgGrad.addColorStop(1, 'rgba(139, 92, 246, 0)')
+      ctx.fillStyle = bgGrad
+      ctx.beginPath()
+      ctx.arc(0, 0, 120, 0, Math.PI * 2)
+      ctx.fill()
+      
+      // 数字 - 更大更醒目
+      ctx.font = 'bold 100px var(--font-display), system-ui'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#ffffff'
+      ctx.strokeStyle = '#fbbf24'
+      ctx.lineWidth = 8
+      ctx.strokeText(flyingNumber.num, 0, 0)
+      ctx.fillText(flyingNumber.num, 0, 0)
+      
+      ctx.restore()
+      
+      // 拖尾粒子 - 减少数量
+      if (Math.random() < 0.4 && particlesRef.current.length < 20) {
+        const colors = ['#fbbf24', '#8b5cf6', '#ffffff']
+        particlesRef.current.push({
+          x: x + (Math.random() - 0.5) * 40,
+          y: y + (Math.random() - 0.5) * 40,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          size: Math.random() * 10 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          life: 40
+        })
       }
     }
-
-    // 光环旋转动画
-    if (ring1Ref.current) {
-      ring1Ref.current.rotation.z = time * 0.5
-      ring1Ref.current.rotation.x = Math.sin(time * 0.3) * 0.2
+    
+    // 数字弹出动画 - 从 40px 到 100px
+    if (poppingNumber) {
+      const t = poppingNumber.progress
+      // 快速缓动
+      const ease = 1 - Math.pow(1 - t, 4)
+      
+      // 位置：从魔盒中心往上弹一点点
+      const startY = cy + 50
+      const targetY = 200
+      const popY = startY - ease * targetY
+      
+      // 字体从 40px 到 100px
+      const fontSize = 40 + ease * 100
+      
+      ctx.save()
+      ctx.translate(cx, popY)
+      
+      // 发光效果
+      ctx.shadowColor = '#22c55e'
+      ctx.shadowBlur = 40
+      
+      // 数字
+      ctx.font = `bold ${fontSize}px system-ui, sans-serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      
+      // 渐变填充
+      const textGrad = ctx.createLinearGradient(-60, -60, 60, 60)
+      textGrad.addColorStop(0, '#4ade80')
+      textGrad.addColorStop(0.5, '#22c55e')
+      textGrad.addColorStop(1, '#16a34a')
+      ctx.fillStyle = textGrad
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 4 + ease * 4
+      ctx.strokeText(poppingNumber.num, 0, 0)
+      ctx.fillText(poppingNumber.num, 0, 0)
+      
+      ctx.restore()
+      
+      // 弹出粒子 - 减少数量
+      if (Math.random() < 0.25 && t < 0.8 && particlesRef.current.length < 25) {
+        const colors = ['#22c55e', '#4ade80', '#fbbf24']
+        particlesRef.current.push({
+          x: cx + (Math.random() - 0.5) * 150,
+          y: popY + (Math.random() - 0.5) * 80,
+          vx: (Math.random() - 0.5) * 10,
+          vy: -Math.random() * 8 - 4,
+          size: Math.random() * 12 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          life: 45
+        })
+      }
     }
-    if (ring2Ref.current) {
-      ring2Ref.current.rotation.z = -time * 0.4
-      ring2Ref.current.rotation.y = time * 0.2
+    
+    animationRef.current = requestAnimationFrame(draw)
+  }, [isSpinning, isOpening, displayNumber, hasNumber, flyingNumber, poppingNumber])
+  
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // 设置 canvas 尺寸（高清 2x）
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
-    if (ring3Ref.current) {
-      ring3Ref.current.rotation.x = time * 0.3
-      ring3Ref.current.rotation.z = Math.sin(time * 0.5) * 0.3
+    
+    // 立即执行一次
+    resize()
+    
+    // 延迟再执行一次确保正确
+    const initTimer = setTimeout(resize, 100)
+    
+    window.addEventListener('resize', resize)
+    animationRef.current = requestAnimationFrame(draw)
+    
+    return () => {
+      clearTimeout(initTimer)
+      cancelAnimationFrame(animationRef.current)
+      window.removeEventListener('resize', resize)
     }
-
-    // 盖子开合动画
-    if (lidRef.current) {
-      const targetRotation = isOpening ? -Math.PI / 2.5 : 0
-      lidRef.current.rotation.x += (targetRotation - lidRef.current.rotation.x) * 0.08
-    }
-  })
-
-  return (
-    <Float speed={3} rotationIntensity={0.3} floatIntensity={0.4}>
-      <group ref={groupRef}>
-        {/* 多层装饰光环 - 更炫酷 */}
-        <mesh ref={ring1Ref} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.2, 0.04, 16, 100]} />
-          <meshBasicMaterial color={COLORS.cyan} transparent opacity={0.6} />
-        </mesh>
-        <mesh ref={ring2Ref} rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-          <torusGeometry args={[2.4, 0.03, 16, 100]} />
-          <meshBasicMaterial color={COLORS.yellow} transparent opacity={0.5} />
-        </mesh>
-        <mesh ref={ring3Ref} rotation={[Math.PI / 4, 0, Math.PI / 6]}>
-          <torusGeometry args={[2.6, 0.025, 16, 100]} />
-          <meshBasicMaterial color={COLORS.purple} transparent opacity={0.4} />
-        </mesh>
-
-        {/* 盒子主体 - 更精细 */}
-        <mesh position={[0, 0, 0]}>
-          <RoundedBox args={[1.6, 1.2, 1.6]} radius={0.15} smoothness={4}>
-            <MeshTransmissionMaterial
-              backside
-              samples={16}
-              thickness={0.5}
-              chromaticAberration={0.3}
-              anisotropy={0.2}
-              distortion={0.3}
-              distortionScale={0.3}
-              iridescence={1}
-              iridescenceIOR={1.5}
-              iridescenceThicknessRange={[100, 1400]}
-              color="#6366f1"
-              transmission={0.9}
-            />
-          </RoundedBox>
-        </mesh>
-
-        {/* 盒子边框装饰 */}
-        <mesh position={[0, 0, 0]}>
-          <RoundedBox args={[1.65, 1.25, 1.65]} radius={0.16} smoothness={4}>
-            <meshBasicMaterial color={COLORS.lightBlue} transparent opacity={0.15} wireframe />
-          </RoundedBox>
-        </mesh>
-
-        {/* 盒子盖子 */}
-        <group ref={lidRef} position={[0, 0.7, -0.8]}>
-          <mesh position={[0, 0.15, 0.8]}>
-            <RoundedBox args={[1.7, 0.35, 1.7]} radius={0.1} smoothness={4}>
-              <MeshTransmissionMaterial
-                backside
-                samples={8}
-                thickness={0.4}
-                chromaticAberration={0.2}
-                iridescence={1}
-                color="#818cf8"
-              />
-            </RoundedBox>
-          </mesh>
-          {/* 盖子装饰 - 发光星星 */}
-          <mesh position={[0, 0.4, 0.8]}>
-            <octahedronGeometry args={[0.2]} />
-            <meshStandardMaterial
-              color={COLORS.yellow}
-              emissive={COLORS.yellow}
-              emissiveIntensity={isOpening ? 1 : 0.5}
-            />
-          </mesh>
-          {/* 小星星装饰 */}
-          <mesh position={[0.4, 0.35, 0.8]}>
-            <octahedronGeometry args={[0.1]} />
-            <meshBasicMaterial color={COLORS.cyan} />
-          </mesh>
-          <mesh position={[-0.4, 0.35, 0.8]}>
-            <octahedronGeometry args={[0.1]} />
-            <meshBasicMaterial color={COLORS.green} />
-          </mesh>
-        </group>
-
-        {/* 内部发光核心 - 多层 */}
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[0.4, 32, 32]} />
-          <meshBasicMaterial
-            color={isOpening ? COLORS.yellow : COLORS.cyan}
-            transparent
-            opacity={0.95}
-          />
-        </mesh>
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[0.5, 32, 32]} />
-          <meshBasicMaterial
-            color={isOpening ? COLORS.orange : COLORS.lightBlue}
-            transparent
-            opacity={0.3}
-          />
-        </mesh>
-
-        {/* 显示数字 - 前后都显示 */}
-        <Text
-          position={[0, 0, 0.9]}
-          fontSize={0.55}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.04}
-          outlineColor="#312e81"
-        >
-          {displayNumber}
-        </Text>
-        <Text
-          position={[0, 0, -0.9]}
-          fontSize={0.4}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          rotation={[0, Math.PI, 0]}
-          outlineWidth={0.03}
-          outlineColor="#312e81"
-        >
-          {displayNumber}
-        </Text>
-
-        {/* 常驻粒子效果 */}
-        <Sparkles
-          count={60}
-          scale={5}
-          size={4}
-          speed={0.5}
-          color={COLORS.cyan}
-        />
-        <Sparkles
-          count={40}
-          scale={4}
-          size={3}
-          speed={0.3}
-          color={COLORS.yellow}
-        />
-
-        {/* 旋转时的拖尾效果 */}
-        {isSpinning && (
-          <>
-            <Sparkles count={100} scale={6} size={6} speed={2} color={COLORS.orange} />
-            <pointLight position={[0, 0, 0]} color={COLORS.cyan} intensity={3} distance={8} />
-          </>
-        )}
-
-        {/* 开盒时的魔法爆发 */}
-        {isOpening && (
-          <>
-            <pointLight position={[0, 2, 0]} color={COLORS.yellow} intensity={5} distance={10} />
-            <pointLight position={[0, 0, 0]} color={COLORS.green} intensity={3} distance={6} />
-            <Sparkles count={150} scale={6} size={8} speed={2} color={COLORS.yellow} />
-            <Sparkles count={80} scale={5} size={5} speed={1.5} color={COLORS.orange} />
-            <Sparkles count={50} scale={4} size={4} speed={1} color={COLORS.green} />
-          </>
-        )}
-      </group>
-    </Float>
-  )
-}
-
-// 聊天消息组件
-function ChatMessage({ message }: { message: Message }) {
-  return (
-    <MessageWrapper
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3, type: "spring" }}
-      isUser={message.type === 'user'}
-    >
-      {message.type === 'bot' && <AvatarImg src={characters.flash} alt="Flash" />}
-      <MessageBubble isUser={message.type === 'user'}>
-        {message.isTyping ? (
-          <TypingIndicator>
-            <TypingDot delay={0} />
-            <TypingDot delay={0.2} />
-            <TypingDot delay={0.4} />
-          </TypingIndicator>
-        ) : (
-          <span dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br/>') }} />
-        )}
-      </MessageBubble>
-      {message.type === 'user' && <Avatar>🧒</Avatar>}
-    </MessageWrapper>
-  )
-}
-
-// 数字卡片组件
-function NumberCard({
-  label,
-  number,
-  tens,
-  ones,
-  isResult = false,
-  visible = true,
-  emoji
-}: {
-  label: string
-  number: string
-  tens: string
-  ones: string
-  isResult?: boolean
-  visible?: boolean
-  emoji: string
-}) {
-  return (
-    <CardWrapper
-      initial={{ opacity: 0, scale: 0.8, rotateY: 180 }}
-      animate={{
-        opacity: visible ? 1 : 0.5,
-        scale: visible ? 1 : 0.9,
-        rotateY: visible ? 0 : 180
-      }}
-      transition={{ duration: 0.5, type: "spring" }}
-    >
-      <CardEmoji>{emoji}</CardEmoji>
-      <CardLabel>{label}</CardLabel>
-      <CardNumber isResult={isResult}>{number}</CardNumber>
-      <DigitBoxes>
-        <DigitBox color={isResult ? COLORS.green : COLORS.blue}>
-          <DigitLabel>十位</DigitLabel>
-          <DigitValue>{tens}</DigitValue>
-        </DigitBox>
-        <DigitBox color={isResult ? COLORS.purple : COLORS.orange}>
-          <DigitLabel>个位</DigitLabel>
-          <DigitValue>{ones}</DigitValue>
-        </DigitBox>
-      </DigitBoxes>
-    </CardWrapper>
-  )
+  }, [draw])
+  
+  return <MagicCanvas ref={canvasRef} />
 }
 
 // 主组件
 export default function MagicMainApp() {
   const magicBox = useMagicBox()
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      type: 'bot',
-      content: '🎉 欢迎来到<strong style="color:#3b82f6">数字魔盒</strong>！<br/><br/>我是闪电<br/><br/>试着输入一个<strong style="color:#22c55e">两位数</strong>（比如 12、35、78），看看魔盒会变出什么神奇的东西吧！✨'
-    }
-  ])
   const [inputValue, setInputValue] = useState('')
   const [isSpinning, setIsSpinning] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
   const [displayNumber, setDisplayNumber] = useState('?')
-  const [currentInput, setCurrentInput] = useState({ number: '--', tens: '-', ones: '-' })
-  const [currentOutput, setCurrentOutput] = useState({ number: '--', tens: '-', ones: '-', visible: false })
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [hasNumber, setHasNumber] = useState(false)
+  const [input, setInput] = useState({ num: '--', t: '-', o: '-' })
+  const [output, setOutput] = useState({ num: '--', t: '-', o: '-', show: false })
+  const [toast, setToast] = useState('')
+  
+  // 动画状态
+  const [flyingNumber, setFlyingNumber] = useState<FlyingNumber | null>(null)
+  const [poppingNumber, setPoppingNumber] = useState<PoppingNumber | null>(null)
+  const flyingAnimRef = useRef<number>(0)
+  const poppingAnimRef = useRef<number>(0)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+
+  // 交换十位和个位
+  const swapDigits = (num: number) => {
+    const tens = Math.floor(num / 10)
+    const ones = num % 10
+    return ones * 10 + tens
   }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const addBotMessage = (content: string, delay = 500) => {
-    const typingId = Date.now()
-    setMessages(prev => [...prev, { id: typingId, type: 'bot', content: '', isTyping: true }])
-
-    setTimeout(() => {
-      setMessages(prev =>
-        prev.map(m => m.id === typingId ? { ...m, content, isTyping: false } : m)
-      )
-    }, delay)
+  
+  // 数字飞入动画
+  const startFlyingAnimation = (num: string, startX: number, startY: number, onComplete: () => void) => {
+    let progress = 0
+    const animate = () => {
+      progress += 0.025
+      if (progress >= 1) {
+        setFlyingNumber(null)
+        onComplete()
+        return
+      }
+      setFlyingNumber({ num, progress, startX, startY })
+      flyingAnimRef.current = requestAnimationFrame(animate)
+    }
+    setFlyingNumber({ num, progress: 0, startX, startY })
+    flyingAnimRef.current = requestAnimationFrame(animate)
   }
-
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: [COLORS.blue, COLORS.green, COLORS.yellow, COLORS.orange, COLORS.purple, COLORS.cyan]
-    })
-    confetti({
-      particleCount: 30,
-      spread: 100,
-      origin: { y: 0.5 },
-      shapes: ['star'],
-      colors: [COLORS.yellow, COLORS.orange]
-    })
+  
+  // 数字弹出动画 - 弹出时立即触发结果和礼花
+  const startPoppingAnimation = (num: string, onStart: () => void, onComplete: () => void) => {
+    let progress = 0
+    let triggeredStart = false
+    const animate = () => {
+      progress += 0.025  // 稍微快一点
+      
+      // 弹出到一半时触发结果显示和礼花
+      if (progress > 0.25 && !triggeredStart) {
+        triggeredStart = true
+        onStart()
+      }
+      
+      if (progress >= 1) {
+        // 保持显示一段时间
+        setTimeout(() => {
+          setPoppingNumber(null)
+          onComplete()
+        }, 1200)
+        return
+      }
+      setPoppingNumber({ num, progress, scale: 0.1 + progress * 0.9, y: 0 })
+      poppingAnimRef.current = requestAnimationFrame(animate)
+    }
+    setPoppingNumber({ num, progress: 0, scale: 0.1, y: 0 })
+    poppingAnimRef.current = requestAnimationFrame(animate)
   }
 
   const handleSubmit = () => {
-    const value = inputValue.trim()
-    if (!value) return
-
-    const validation = magicBox.validateInput(value)
-    if (!validation.valid) {
-      addBotMessage(`🤔 ${validation.message}`)
-      return
-    }
-
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      type: 'user',
-      content: `我输入了 ${validation.number} 🔢`
-    }])
-
-    const result = magicBox.processNumber(validation.number!)
-
-    setDisplayNumber(result.input.toString())
-    setCurrentInput({
-      number: result.input.toString(),
-      tens: result.tens.toString(),
-      ones: result.ones.toString()
+    if (!inputValue.trim()) return
+    const v = magicBox.validateInput(inputValue)
+    if (!v.valid) { showToast(v.message!); return }
+    
+    const inputNum = v.number!
+    const outputNum = swapDigits(inputNum)
+    
+    // 处理输入（同时记录到 store）
+    magicBox.processNumber(inputNum)
+    
+    setInput({ 
+      num: inputNum.toString(), 
+      t: Math.floor(inputNum / 10).toString(), 
+      o: (inputNum % 10).toString() 
     })
-    setCurrentOutput({ ...currentOutput, visible: false })
-
-    setIsSpinning(true)
-    setTimeout(() => setIsSpinning(false), 1000)
-
-    setTimeout(() => addBotMessage(`📦 ${result.message}`), 800)
-
+    setOutput({ ...output, show: false })
     setInputValue('')
-  }
-
-  const handleReveal = () => {
-    const result = magicBox.openBox()
-
-    if (!result.success) {
-      addBotMessage(`💭 ${result.message}`)
-      return
-    }
-
-    setIsOpening(true)
-
-    setTimeout(() => {
-      setIsOpening(false)
-      setDisplayNumber(result.output!.toString())
-      setCurrentOutput({
-        number: result.output!.toString(),
-        tens: result.outputTens!.toString(),
-        ones: result.outputOnes!.toString(),
-        visible: true
-      })
-
-      addBotMessage(`✨ ${result.message}`)
+    
+    // 从右侧键盘区域飞入魔盒（相对于 Canvas 的坐标）
+    // Canvas 是 520x520，中心在 (260, 260)
+    // 键盘在右侧，所以起始位置在 Canvas 右侧外部
+    const startX = 650  // Canvas 右侧外部
+    const startY = 260  // Canvas 垂直中心
+    
+    startFlyingAnimation(inputNum.toString(), startX, startY, () => {
+      // 飞入完成后，显示在盒子里
+      setDisplayNumber(inputNum.toString())
+      setHasNumber(true)
+      setIsSpinning(true)
+      
+      // 旋转后打开盒子
       setTimeout(() => {
-        addBotMessage(`🌟 ${result.encouragement}`)
-        triggerConfetti()
-      }, 800)
-    }, 1500)
-  }
-
-  const handlePattern = () => {
-    const result = magicBox.revealPattern()
-
-    if (!result.success) {
-      addBotMessage(`💭 ${result.message}`)
-      return
-    }
-
-    setIsOpening(true)
-
-    setTimeout(() => {
-      setIsOpening(false)
-
-      if (result.results && result.results.length > 0) {
-        const last = result.results[result.results.length - 1]
-        setDisplayNumber(last.output.toString())
-        setCurrentOutput({
-          number: last.output.toString(),
-          tens: Math.floor(last.output / 10).toString(),
-          ones: (last.output % 10).toString(),
-          visible: true
-        })
-      }
-
-      addBotMessage(`🔮 ${result.message}`)
-      setTimeout(() => {
-        addBotMessage(result.explanation!.join('<br/>'))
+        setIsSpinning(false)
+        setIsOpening(true)
+        
+        // 打开后弹出结果数字
         setTimeout(() => {
-          addBotMessage(`🎉 ${result.encouragement}`)
-          triggerConfetti()
-          triggerConfetti()
-        }, 1000)
-      }, 800)
-    }, 1500)
+          startPoppingAnimation(
+            outputNum.toString(), 
+            // 弹出时立即触发
+            () => {
+              setOutput({ 
+                num: outputNum.toString(), 
+                t: Math.floor(outputNum / 10).toString(), 
+                o: (outputNum % 10).toString(), 
+                show: true 
+              })
+              // 更大的礼花效果
+              confetti({ 
+                particleCount: 200, 
+                spread: 100, 
+                origin: { y: 0.5 }, 
+                colors: ['#3b82f6', '#8b5cf6', '#22c55e', '#fbbf24', '#f472b6'],
+                scalar: 1.2
+              })
+              // 再来一波
+              setTimeout(() => {
+                confetti({ 
+                  particleCount: 150, 
+                  spread: 120, 
+                  origin: { y: 0.6, x: 0.3 }, 
+                  colors: ['#22c55e', '#4ade80', '#86efac']
+                })
+                confetti({ 
+                  particleCount: 150, 
+                  spread: 120, 
+                  origin: { y: 0.6, x: 0.7 }, 
+                  colors: ['#8b5cf6', '#a78bfa', '#c4b5fd']
+                })
+              }, 200)
+            },
+            // 完成后关闭盒子
+            () => {
+              setIsOpening(false)
+              setHasNumber(false)
+              setDisplayNumber('?')
+            }
+          )
+        }, 500)
+      }, 700)
+    })
   }
+  
+  // 清理动画
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(flyingAnimRef.current)
+      cancelAnimationFrame(poppingAnimRef.current)
+    }
+  }, [])
 
-  const handleClear = () => {
-    magicBox.clearHistory()
-    setDisplayNumber('?')
-    setCurrentInput({ number: '--', tens: '-', ones: '-' })
-    setCurrentOutput({ number: '--', tens: '-', ones: '-', visible: false })
-    addBotMessage('🧹 历史记录已清空！让我们重新开始探索吧！🚀')
+  const handleKey = (k: string) => {
+    if (k === 'C') setInputValue('')
+    else if (k === '←') setInputValue(v => v.slice(0, -1))
+    else if (inputValue.length < 2) setInputValue(v => v + k)
   }
 
   return (
-    <Container
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* 背景装饰 */}
-      <BackgroundDecoration />
-
-      {/* 粒子特效 */}
-      <ParticleBackground />
-
-      {/* 主内容 */}
-      <MainContent>
-        {/* 左侧 - 3D魔盒区 */}
+    <Page>
+      <Bg />
+      <ParticleLines />
+      
+      {/* 全屏魔法动画Canvas - 必须在最外层 */}
+      <FullscreenCanvas>
+        <MagicBoxCanvas 
+          isSpinning={isSpinning} 
+          isOpening={isOpening} 
+          displayNumber={displayNumber}
+          hasNumber={hasNumber}
+          flyingNumber={flyingNumber}
+          poppingNumber={poppingNumber}
+        />
+      </FullscreenCanvas>
+      
+      {/* 顶部标题 */}
+      <Header>
+        <Title>第一关：数字魔法盒</Title>
+      </Header>
+      
+      <Layout>
+        {/* 左侧：输入/结果 */}
         <LeftPanel>
-          <MagicBoxArea>
-            <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-              <Suspense fallback={null}>
-                <ambientLight intensity={0.6} />
-                <pointLight position={[10, 10, 10]} intensity={0.8} color="#ffffff" />
-                <pointLight position={[-10, -10, -5]} intensity={0.4} color={COLORS.cyan} />
-                <Environment preset="sunset" />
-                <CuteMagicBox3D
-                  isSpinning={isSpinning}
-                  isOpening={isOpening}
-                  displayNumber={displayNumber}
-                />
-              </Suspense>
-            </Canvas>
-
-            {/* 装饰性浮动元素 */}
-            <FloatingDeco style={{ top: '10%', left: '5%' }}>⭐</FloatingDeco>
-            <FloatingDeco style={{ top: '15%', right: '8%' }} delay={0.5}>✨</FloatingDeco>
-            <FloatingDeco style={{ bottom: '20%', left: '8%' }} delay={1}>🌟</FloatingDeco>
-            <FloatingDeco style={{ bottom: '15%', right: '5%' }} delay={1.5}>💫</FloatingDeco>
-          </MagicBoxArea>
-
-          {/* 数字卡片 */}
-          <CardsContainer>
-            <NumberCard
-              label="输入的数"
-              number={currentInput.number}
-              tens={currentInput.tens}
-              ones={currentInput.ones}
-              emoji="📥"
-            />
-            <SwapArrow>
-              <motion.span
-                animate={{ x: [0, 10, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                ✨➡️✨
-              </motion.span>
-              <span>魔法变换</span>
-            </SwapArrow>
-            <NumberCard
-              label="魔法结果"
-              number={currentOutput.number}
-              tens={currentOutput.tens}
-              ones={currentOutput.ones}
-              isResult
-              visible={currentOutput.visible}
-              emoji="🎁"
-            />
-          </CardsContainer>
+          <NumCard>
+            <NumLabel>输入</NumLabel>
+            <NumBig>{input.num}</NumBig>
+            <NumDigits>
+              <Digit c={COLORS.purple}>{input.t}<span>十</span></Digit>
+              <Digit c={COLORS.primaryLight}>{input.o}<span>个</span></Digit>
+            </NumDigits>
+          </NumCard>
+          
+          <ArrowIcon><IoArrowDown /></ArrowIcon>
+          
+          <NumCard glow>
+            <NumLabel>结果</NumLabel>
+            <NumBig glow>{output.show ? output.num : '??'}</NumBig>
+            <NumDigits>
+              <Digit c={COLORS.success}>{output.show ? output.t : '-'}<span>十</span></Digit>
+              <Digit c={COLORS.accent}>{output.show ? output.o : '-'}<span>个</span></Digit>
+            </NumDigits>
+          </NumCard>
         </LeftPanel>
 
-        {/* 右侧 - 交互区 */}
+        {/* 中间：魔盒区域（只显示毙玻璃框） */}
+        <CenterPanel>
+          <GlassBox />
+        </CenterPanel>
+
+        {/* 右侧：键盘 + 按钮 */}
         <RightPanel>
-          {/* 聊天区 */}
-          <ChatContainer>
-            <ChatMessages>
-              <AnimatePresence>
-                {messages.map(msg => (
-                  <ChatMessage key={msg.id} message={msg} />
-                ))}
-              </AnimatePresence>
-              <div ref={messagesEndRef} />
-            </ChatMessages>
-          </ChatContainer>
-
-          {/* 输入区 */}
-          <InputArea>
-            <InputWrapper>
-              <NumberInput
-                type="text"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value.replace(/[^0-9]/g, ''))}
-                onKeyPress={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="输入两位数..."
-                maxLength={2}
-              />
-              <InputEmoji>🔢</InputEmoji>
-            </InputWrapper>
-            <ButtonGroup>
-              <ActionButton color="blue" onClick={handleSubmit}>
-                <span>📦</span> 放入魔盒
-              </ActionButton>
-              <ActionButton color="green" onClick={handleReveal}>
-                <span>✨</span> 打开魔盒
-              </ActionButton>
-              <ActionButton color="orange" onClick={handlePattern}>
-                <span>💡</span> 揭示规律
-              </ActionButton>
-            </ButtonGroup>
-          </InputArea>
-
-          {/* 历史记录 */}
-          <HistoryPanel>
-            <HistoryHeader>
-              <span>📝 魔法记录</span>
-              <ClearButton onClick={handleClear}>清空</ClearButton>
-            </HistoryHeader>
-            <HistoryList>
-              {magicBox.history.length === 0 ? (
-                <HistoryEmpty>还没有记录哦，快来试试吧！🚀</HistoryEmpty>
-              ) : (
-                magicBox.history.map((item, index) => (
-                  <HistoryItem key={index}>
-                    <span>{item.input}</span>
-                    <span style={{ color: COLORS.blue }}>✨➡️</span>
-                    <span style={{ color: item.revealed ? COLORS.green : COLORS.yellow }}>
-                      {item.revealed ? item.output : '?'}
-                    </span>
-                    {item.revealed && <span>🎉</span>}
-                  </HistoryItem>
-                ))
-              )}
-            </HistoryList>
-          </HistoryPanel>
+          <Display>{inputValue || '—'}</Display>
+          
+          <Keypad>
+            {[1,2,3,4,5,6,7,8,9].map(n => (
+              <Key key={n} onClick={() => handleKey(String(n))} whileTap={{ scale: 0.92 }}>{n}</Key>
+            ))}
+            <Key className="fn" onClick={() => handleKey('C')} whileTap={{ scale: 0.92 }}><MdClear /></Key>
+            <Key onClick={() => handleKey('0')} whileTap={{ scale: 0.92 }}>0</Key>
+            <Key className="fn back" onClick={() => handleKey('←')} whileTap={{ scale: 0.92 }}><IoBackspace /></Key>
+          </Keypad>
+          
+          <Btn primary onClick={handleSubmit} whileTap={{ scale: 0.97 }}>放入魔盒</Btn>
         </RightPanel>
-      </MainContent>
-    </Container>
+      </Layout>
+
+      <AnimatePresence>
+        {toast && (
+          <Toast 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            {toast}
+          </Toast>
+        )}
+      </AnimatePresence>
+    </Page>
   )
 }
 
-// 动画关键帧
-const floatAnimation = keyframes`
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-12px) rotate(3deg); }
-`
-
-const bounceAnimation = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-`
-
-const typingAnimation = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-`
-
-// Styled Components
-const Container = styled(motion.div)`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #f0fdf4 60%, #fefce8 100%);
-  position: relative;
-  overflow-x: hidden;
-`
-
-const BackgroundDecoration = styled.div`
+// ========== Styles ==========
+const ParticleCanvas = styled.canvas`
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
-  z-index: 0;
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 90%, rgba(250, 204, 21, 0.08) 0%, transparent 50%);
+  z-index: 1;
 `
 
-const MainContent = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  padding: 30px 30px 120px;
-  max-width: 1600px;
-  margin: 0 auto;
+const Page = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
   position: relative;
-  z-index: 1;
-  
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
+`
+
+const Bg = styled.div`
+  position: fixed;
+  inset: 0;
+  background: url(${backgrounds.policeStation}) center/cover;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(30,64,175,0.55), rgba(124,58,237,0.45));
   }
+`
+
+const Header = styled.div`
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 20px 20px;
+  padding: 12px 40px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+`
+
+const Title = styled.h1`
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 50%, ${COLORS.primaryLight} 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  font-weight: 700;
+`
+
+const Layout = styled.div`
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 1400px;
+  justify-content: center;
+  padding: 0 20px;
 `
 
 const LeftPanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  align-items: center;
+  gap: 16px;
+  min-width: 180px;
 `
 
-const MagicBoxArea = styled.div`
-  height: 380px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(224, 242, 254, 0.7) 100%);
-  border-radius: 30px;
-  border: 3px solid #60a5fa;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15);
+const NumCard = styled.div<{ glow?: boolean }>`
+  background: rgba(255,255,255,0.96);
+  border: 2px solid ${p => p.glow ? COLORS.success : COLORS.primaryLight};
+  border-radius: 20px;
+  padding: 22px 32px;
+  text-align: center;
+  min-width: 160px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 `
 
-const FloatingDeco = styled.div<{ delay?: number }>`
-  position: absolute;
+const NumLabel = styled.div`
+  font-size: 13px;
+  color: ${COLORS.textMuted};
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+`
+
+const NumBig = styled.div<{ glow?: boolean }>`
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 800;
+  background: ${p => p.glow
+    ? `linear-gradient(135deg, ${COLORS.success}, #06b6d4)`
+    : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple})`};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+`
+
+const NumDigits = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+`
+
+const Digit = styled.div<{ c: string }>`
+  background: ${p => p.c}12;
+  border: 2px solid ${p => p.c};
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: ${p => p.c};
+  span { font-size: 11px; color: ${COLORS.textMuted}; margin-left: 3px; }
+`
+
+const ArrowIcon = styled.div`
   font-size: 28px;
-  animation: ${floatAnimation} 3s ease-in-out infinite;
-  animation-delay: ${props => props.delay || 0}s;
-  z-index: 10;
+  color: ${COLORS.gold};
+  display: flex;
+  align-items: center;
+`
+
+const CenterPanel = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1.5;
+  min-width: 400px;
+`
+
+const GlassBox = styled.div`
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 520px;
+  min-width: 380px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(30, 64, 175, 0.25);
+`
+
+const FullscreenCanvas = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   pointer-events: none;
 `
 
-const CardsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
-`
-
-const CardWrapper = styled(motion.div)`
-  background: white;
-  border: 3px solid #60a5fa;
-  border-radius: 25px;
-  padding: 20px 25px;
-  text-align: center;
-  min-width: 150px;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.12);
-  position: relative;
-`
-
-const CardEmoji = styled.div`
-  font-size: 28px;
-  margin-bottom: 5px;
-`
-
-const CardLabel = styled.div`
-  font-family: 'Noto Sans SC', sans-serif;
-  font-size: 14px;
-  color: #1e40af;
-  font-weight: 600;
-  margin-bottom: 8px;
-`
-
-const CardNumber = styled.div<{ isResult?: boolean }>`
-  font-family: 'Nunito', sans-serif;
-  font-size: 42px;
-  font-weight: 900;
-  color: ${props => props.isResult ? COLORS.green : COLORS.blue};
-  margin-bottom: 12px;
-`
-
-const DigitBoxes = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-`
-const AvatarImg = styled.img`
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-`
-
-const DigitBox = styled.div<{ color: string }>`
-  background: ${props => props.color}15;
-  border: 2px solid ${props => props.color};
-  border-radius: 12px;
-  padding: 8px 12px;
-  min-width: 45px;
-`
-
-const DigitLabel = styled.div`
-  font-size: 10px;
-  color: #1e40af;
-  font-weight: 600;
-  margin-bottom: 3px;
-`
-
-const DigitValue = styled.div`
-  font-family: 'Nunito', sans-serif;
-  font-size: 22px;
-  font-weight: 800;
-  color: #0f172a;
-`
-
-const SwapArrow = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  
-  span:first-of-type {
-    font-size: 24px;
-  }
-  
-  span:last-of-type {
-    font-size: 12px;
-    color: ${COLORS.blue};
-    font-weight: 600;
-  }
+const MagicCanvas = styled.canvas`
+  width: 100%;
+  height: 100%;
+  display: block;
 `
 
 const RightPanel = styled.div`
+  background: rgba(255,255,255,0.96);
+  border-radius: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-height: calc(100vh - 130px);
+  gap: 18px;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.12);
+  min-width: 240px;
 `
 
-const ChatContainer = styled.div`
-  flex: 1;
-  background: white;
-  border: 3px solid #22c55e;
-  border-radius: 25px;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.12);
-`
-
-const ChatMessages = styled.div`
-  height: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 20px;
-`
-
-const MessageWrapper = styled(motion.div) <{ isUser: boolean }>`
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-direction: ${props => props.isUser ? 'row-reverse' : 'row'};
-`
-
-const Avatar = styled.div`
-  font-size: 32px;
-  flex-shrink: 0;
-`
-
-const MessageBubble = styled.div<{ isUser: boolean }>`
-  max-width: 80%;
-  padding: 12px 18px;
-  border-radius: 20px;
-  background: ${props => props.isUser
-    ? `linear-gradient(135deg, ${COLORS.blue} 0%, ${COLORS.lightBlue} 100%)`
-    : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)'};
-  color: ${props => props.isUser ? 'white' : '#1e293b'};
-  font-family: 'Noto Sans SC', sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  box-shadow: 0 4px 15px ${props => props.isUser
-    ? 'rgba(59, 130, 246, 0.2)'
-    : 'rgba(0, 0, 0, 0.05)'};
-`
-
-const TypingIndicator = styled.div`
-  display: flex;
-  gap: 5px;
-  padding: 5px 0;
-`
-
-const TypingDot = styled.div<{ delay: number }>`
-  width: 8px;
-  height: 8px;
-  background: ${COLORS.blue};
-  border-radius: 50%;
-  animation: ${typingAnimation} 1s ease-in-out infinite;
-  animation-delay: ${props => props.delay}s;
-`
-
-const InputArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`
-
-const InputWrapper = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-`
-
-const NumberInput = styled.input`
-  width: 100%;
-  padding: 18px 60px 18px 25px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1e293b;
-  background: white;
-  border: 3px solid #60a5fa;
-  border-radius: 25px;
-  outline: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
-  
-  &::placeholder {
-    color: #94a3b8;
-  }
-  
-  &:focus {
-    border-color: ${COLORS.blue};
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
-  }
-`
-
-const InputEmoji = styled.span`
-  position: absolute;
-  right: 20px;
-  font-size: 24px;
-  animation: ${bounceAnimation} 2s ease-in-out infinite;
-`
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-`
-
-const ActionButton = styled.button<{ color: string }>`
-  flex: 1;
+const Display = styled.div`
+  height: 80px;
+  background: linear-gradient(135deg, ${COLORS.primary}06, ${COLORS.purple}06);
+  border: 2px solid ${COLORS.primaryLight};
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 15px 20px;
-  font-family: 'Noto Sans SC', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: white;
-  background: ${props => {
-    switch (props.color) {
-      case 'blue': return `linear-gradient(135deg, ${COLORS.blue} 0%, ${COLORS.lightBlue} 100%)`
-      case 'green': return `linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.lime} 100%)`
-      case 'orange': return `linear-gradient(135deg, ${COLORS.orange} 0%, ${COLORS.yellow} 100%)`
-      default: return `linear-gradient(135deg, ${COLORS.blue} 0%, ${COLORS.lightBlue} 100%)`
-    }
-  }};
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px ${props => {
-    switch (props.color) {
-      case 'blue': return 'rgba(59, 130, 246, 0.3)'
-      case 'green': return 'rgba(34, 197, 94, 0.3)'
-      case 'orange': return 'rgba(251, 146, 60, 0.3)'
-      default: return 'rgba(59, 130, 246, 0.3)'
-    }
-  }};
-  
-  &:hover {
-    transform: translateY(-3px);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
-  span:first-of-type {
-    font-size: 18px;
-  }
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 800;
+  color: ${COLORS.primary};
 `
 
-const HistoryPanel = styled.div`
-  background: white;
-  border: 3px solid ${COLORS.yellow};
-  border-radius: 20px;
-  padding: 15px;
-  box-shadow: 0 4px 15px rgba(250, 204, 21, 0.15);
-`
-
-const HistoryHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-family: 'Noto Sans SC', sans-serif;
-  font-weight: 700;
-  color: #1e293b;
-`
-
-const ClearButton = styled.button`
-  padding: 5px 15px;
-  font-size: 12px;
-  font-weight: 600;
-  color: ${COLORS.orange};
-  background: #fef3c7;
-  border: 2px solid ${COLORS.yellow};
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: ${COLORS.orange};
-    color: white;
-  }
-`
-
-const HistoryList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
+const Keypad = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 `
 
-const HistoryEmpty = styled.div`
-  color: #64748b;
-  font-size: 14px;
-  text-align: center;
-  width: 100%;
-  padding: 10px;
-`
-
-const HistoryItem = styled.div`
+const Key = styled(motion.button)`
+  height: 54px;
+  border-radius: 14px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid ${COLORS.primaryLight};
+  background: ${COLORS.primary}06;
+  color: ${COLORS.primary};
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 15px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
-  border: 2px solid #e2e8f0;
-  border-radius: 20px;
-  font-family: 'Nunito', sans-serif;
+  justify-content: center;
+  transition: all 0.15s;
+  
+  &:hover { background: ${COLORS.primary}12; }
+  
+  &.fn {
+    border-color: #e11d48;
+    background: #e11d4808;
+    color: #e11d48;
+    font-size: 20px;
+  }
+  
+  &.back {
+    border-color: ${COLORS.gold};
+    background: ${COLORS.gold}08;
+    color: ${COLORS.accent};
+  }
+`
+
+const Btn = styled(motion.button)<{ primary?: boolean }>`
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 14px;
   font-size: 16px;
   font-weight: 700;
-  color: #1e293b;
+  color: white;
+  cursor: pointer;
+  background: ${p => p.primary
+    ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight})`
+    : `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.purpleLight})`};
+  box-shadow: 0 5px 20px ${p => p.primary ? 'rgba(30,64,175,0.35)' : 'rgba(139,92,246,0.35)'};
+`
+
+const Toast = styled(motion.div)`
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,64,175,0.95);
+  color: white;
+  padding: 14px 32px;
+  border-radius: 20px;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  z-index: 1000;
 `

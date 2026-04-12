@@ -7,6 +7,7 @@ import FormulaMagicStage from './components/FormulaMagicStage'
 import MagicArrayStage from './components/MagicArrayStage'
 import MagicTowerStage from './components/MagicTowerStage'
 import { expressions, backgrounds, items, zootopiaColors as COLORS } from './assets/images'
+import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
 import './App.css'
 
 // 活动阶段: intro -> stage1(数字魔盒) -> stage2(算式魔法台) -> stage3(四十四魔法阵) -> stage4(九十九魔法塔) -> complete
@@ -182,10 +183,10 @@ function StageNavigation({
   onNext: () => void 
 }) {
   const stages = [
-    { id: 1, emoji: '📦', name: '数字魔盒' },
-    { id: 2, emoji: '⚖️', name: '算式魔法台' },
-    { id: 3, emoji: '🔮', name: '四十四魔法阵' },
-    { id: 4, emoji: '🏰', name: '九十九魔法塔' }
+    { id: 1, label: '1', name: '数字魔法盒' },
+    { id: 2, label: '2', name: '算式魔法台' },
+    { id: 3, label: '3', name: '四十四魔法阵' },
+    { id: 4, label: '4', name: '九十九魔法塔' }
   ]
 
   return (
@@ -197,13 +198,8 @@ function StageNavigation({
         whileHover={{ scale: 1.03, x: -3, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
         whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
       >
-        <motion.span
-          animate={{ x: [0, -4, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          ⬅️
-        </motion.span>
-        <span>{currentStage === 1 ? '返回首页' : stages[0].emoji + ' ' + stages[0].name}</span>
+        {currentStage === 1 ? <IoHome /> : <IoChevronBack />}
+        <span>{currentStage === 1 ? '返回首页' : stages[currentStage - 2].name}</span>
       </NavButton>
 
       {/* 关卡指示器 */}
@@ -214,7 +210,7 @@ function StageNavigation({
             active={stage.id === currentStage}
             whileHover={{ scale: 1.1, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
           >
-            <span>{stage.emoji}</span>
+            <span>{stage.label}</span>
             {stage.id === currentStage && (
               <motion.div
                 layoutId="activeStage"
@@ -238,13 +234,8 @@ function StageNavigation({
         whileHover={{ scale: 1.03, x: 3, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
         whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
       >
-        <span>{currentStage === 4 ? '完成活动 🏆' : stages[currentStage].emoji + ' ' + stages[currentStage].name}</span>
-        <motion.span
-          animate={{ x: [0, 4, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          ➡️
-        </motion.span>
+        <span>{currentStage === 4 ? '完成活动' : stages[currentStage].name}</span>
+        {currentStage === 4 ? <IoCheckmarkCircle /> : <IoChevronForward />}
       </NavButton>
     </NavContainer>
   )
@@ -285,6 +276,10 @@ const NavButton = styled(motion.button)<{ position: 'left' | 'right' }>`
     ? '0 4px 15px rgba(99, 102, 241, 0.4)'
     : '0 4px 15px rgba(0, 0, 0, 0.1)'};
 
+  svg {
+    font-size: 1.1rem;
+  }
+
   &:hover {
     box-shadow: ${props => props.position === 'right' 
       ? '0 8px 25px rgba(99, 102, 241, 0.45)'
@@ -306,22 +301,24 @@ const StageIndicator = styled.div`
 
 const StagePoint = styled(motion.div)<{ active: boolean }>`
   position: relative;
-  width: 45px;
-  height: 45px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: ${props => props.active 
-    ? 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' 
+    ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' 
     : '#f1f5f9'};
   border-radius: 50%;
-  font-size: 1.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${props => props.active ? 'white' : '#64748b'};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
     background: ${props => props.active 
-      ? 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' 
+      ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' 
       : '#e2e8f0'};
     transform: scale(1.08);
   }
