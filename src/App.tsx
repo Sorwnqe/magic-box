@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import styled from '@emotion/styled'
+import { keyframes } from '@emotion/react'
+import { preloadSounds } from './hooks/useSound'
 import MagicIntro from './components/MagicIntro'
 import MagicMainApp from './components/MagicMainApp'
 import FormulaPreview from './components/FormulaPreview'
@@ -16,48 +18,124 @@ import './App.css'
 type AppState = 'intro' | 'stage1' | 'preview' | 'stage2' | 'stage3' | 'stage4' | 'summary' | 'complete'
 type TransitionDirection = 'left' | 'right' | null
 
+// 页面切换过渡遮罩动画
+const shimmer = keyframes`
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+`
+
+const TransitionOverlay = styled(motion.div)`
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.95) 0%,
+    rgba(99, 102, 241, 0.95) 25%,
+    rgba(59, 130, 246, 0.95) 50%,
+    rgba(34, 211, 238, 0.95) 75%,
+    rgba(139, 92, 246, 0.95) 100%
+  );
+  background-size: 200% 100%;
+  animation: ${shimmer} 2s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`
+
+const TransitionContent = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+`
+
+const TransitionEmoji = styled(motion.span)`
+  font-size: 4rem;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+`
+
+const TransitionText = styled(motion.span)`
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+`
+
 function App() {
   const [appState, setAppState] = useState<AppState>('intro')
   const [transitionDirection, setTransitionDirection] = useState<TransitionDirection>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionInfo, setTransitionInfo] = useState<{ emoji: string; text: string } | null>(null)
+
+  // 预加载音效
+  useEffect(() => {
+    preloadSounds()
+  }, [])
+
+  // 获取关卡信息
+  const getStageInfo = (state: AppState): { emoji: string; text: string } => {
+    switch (state) {
+      case 'intro': return { emoji: '🏠', text: '返回首页' }
+      case 'stage1': return { emoji: '📦', text: '数字魔法盒' }
+      case 'preview': return { emoji: '✨', text: '发现秘密' }
+      case 'stage2': return { emoji: '🎯', text: '算式魔法台' }
+      case 'stage3': return { emoji: '🔮', text: '四十四魔法阵' }
+      case 'stage4': return { emoji: '🏰', text: '九十九魔法塔' }
+      case 'summary': return { emoji: '📜', text: '算式总结' }
+      case 'complete': return { emoji: '🏆', text: '任务完成' }
+      default: return { emoji: '✨', text: '加载中' }
+    }
+  }
+
+  // 带过渡效果的状态切换
+  const transitionTo = (newState: AppState, direction: TransitionDirection) => {
+    setTransitionInfo(getStageInfo(newState))
+    setIsTransitioning(true)
+    setTransitionDirection(direction)
+    
+    // 在遮罩完全显示后切换状态
+    setTimeout(() => {
+      setAppState(newState)
+    }, 300)
+    
+    // 遮罩消失
+    setTimeout(() => {
+      setIsTransitioning(false)
+    }, 700)
+  }
 
   const handleIntroComplete = () => {
-    setTransitionDirection('right')
-    setAppState('stage1')
+    transitionTo('stage1', 'right')
   }
 
   const goToStage1 = () => {
-    setTransitionDirection('left')
-    setAppState('stage1')
+    transitionTo('stage1', 'left')
   }
 
   const goToPreview = () => {
-    setTransitionDirection('right')
-    setAppState('preview')
+    transitionTo('preview', 'right')
   }
 
   const goToStage2 = () => {
-    setTransitionDirection('right')
-    setAppState('stage2')
+    transitionTo('stage2', 'right')
   }
 
   const goToStage3 = () => {
-    setTransitionDirection('right')
-    setAppState('stage3')
+    transitionTo('stage3', 'right')
   }
 
   const goToStage4 = () => {
-    setTransitionDirection('right')
-    setAppState('stage4')
+    transitionTo('stage4', 'right')
   }
 
   const goToSummary = () => {
-    setTransitionDirection('right')
-    setAppState('summary')
+    transitionTo('summary', 'right')
   }
 
   const handleComplete = () => {
-    setTransitionDirection('right')
-    setAppState('complete')
+    transitionTo('complete', 'right')
   }
 
   // 根据方向计算动画参数 - 更炫酷的换页动效
@@ -89,6 +167,36 @@ function App() {
 
   return (
     <div className="app">
+      {/* 页面切换过渡遮罩 */}
+      <AnimatePresence>
+        {isTransitioning && transitionInfo && (
+          <TransitionOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <TransitionContent
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.1, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TransitionEmoji
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              >
+                {transitionInfo.emoji}
+              </TransitionEmoji>
+              <TransitionText>{transitionInfo.text}</TransitionText>
+            </TransitionContent>
+          </TransitionOverlay>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {appState === 'intro' && (
           <MagicIntro key="intro" onComplete={handleIntroComplete} />
@@ -107,10 +215,7 @@ function App() {
             <MagicMainApp />
             <StageNavigation
               currentStage={1}
-              onPrev={() => {
-                setTransitionDirection('left')
-                setAppState('intro')
-              }}
+              onPrev={() => transitionTo('intro', 'left')}
               onNext={goToPreview}
             />
           </motion.div>
@@ -126,7 +231,7 @@ function App() {
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
-            <FormulaPreview onContinue={goToStage2} />
+            <FormulaPreview onContinue={goToStage2} onBack={goToStage1} />
           </motion.div>
         )}
 
@@ -197,14 +302,13 @@ function App() {
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
-            <FormulaSummary onContinue={handleComplete} />
+            <FormulaSummary onContinue={handleComplete} onBack={goToStage4} />
           </motion.div>
         )}
 
         {appState === 'complete' && (
           <FinalCelebration key="complete" onRestart={() => {
-            setTransitionDirection('left')
-            setAppState('intro')
+            transitionTo('intro', 'left')
           }} />
         )}
       </AnimatePresence>

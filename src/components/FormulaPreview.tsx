@@ -150,14 +150,6 @@ const Divider = styled.div`
   margin: 15px 0;
 `
 
-const HintText = styled(motion.div)`
-  font-size: 1rem;
-  color: ${COLORS.purple};
-  text-align: center;
-  margin-top: 10px;
-  font-weight: 600;
-`
-
 const CharacterLeft = styled(motion.div)`
   position: fixed;
   bottom: 60px;
@@ -202,8 +194,35 @@ const SpeechBubble = styled(motion.div)`
   }
 `
 
-const ActionButton = styled(motion.button)<{ variant?: 'primary' | 'success' }>`
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
   margin-top: 30px;
+`
+
+const BackButton = styled(motion.button)`
+  padding: 16px 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: ${COLORS.purple};
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid ${COLORS.purple};
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+  }
+`
+
+const ActionButton = styled(motion.button)<{ variant?: 'primary' | 'success' }>`
   padding: 18px 50px;
   border: none;
   border-radius: 30px;
@@ -250,9 +269,10 @@ const Sparkle = styled.div<{ delay: number; x: number; y: number }>`
 
 interface FormulaPreviewProps {
   onContinue: () => void
+  onBack?: () => void
 }
 
-export default function FormulaPreview({ onContinue }: FormulaPreviewProps) {
+export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewProps) {
   const [showAnswers, setShowAnswers] = useState(false)
   const [answersRevealed, setAnswersRevealed] = useState([false, false])
   
@@ -332,7 +352,7 @@ export default function FormulaPreview({ onContinue }: FormulaPreviewProps) {
           animate={{ scale: 1 }}
           transition={{ delay: 0.8, type: 'spring' }}
         >
-          🦊 十位和个位交换后相加，快去试试吧！
+          🦊 用你找到的规律，一起试试吧！
         </SpeechBubble>
         <CharacterImg src={characters.nick} alt="Nick" />
       </CharacterRight>
@@ -411,7 +431,7 @@ export default function FormulaPreview({ onContinue }: FormulaPreviewProps) {
           
           <Divider />
           
-          <AnimatePresence mode="wait">
+          {/* <AnimatePresence mode="wait">
             {showAnswers && answersRevealed[1] ? (
               <HintText
                 key="revealed"
@@ -431,36 +451,63 @@ export default function FormulaPreview({ onContinue }: FormulaPreviewProps) {
                 💡 12 ↔ 21，23 ↔ 32 —— 十位和个位互换！
               </HintText>
             )}
-          </AnimatePresence>
+          </AnimatePresence> */}
         </FormulaCard>
         
         <AnimatePresence mode="wait">
           {showAnswers && answersRevealed[1] ? (
-            <ActionButton
-              key="continue"
-              variant="success"
-              onClick={onContinue}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              🚀 进入第二关
-            </ActionButton>
+            <ButtonGroup>
+              {onBack && (
+                <BackButton
+                  onClick={onBack}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  ← 返回第一关
+                </BackButton>
+              )}
+              <ActionButton
+                key="continue"
+                variant="success"
+                onClick={onContinue}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🚀 进入第二关
+              </ActionButton>
+            </ButtonGroup>
           ) : (
-            <ActionButton
-              key="reveal"
-              onClick={handleShowAnswers}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ delay: 1.2 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              🌟 显示答案
-            </ActionButton>
+            <ButtonGroup>
+              {onBack && (
+                <BackButton
+                  onClick={onBack}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.2 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  ← 返回第一关
+                </BackButton>
+              )}
+              <ActionButton
+                key="reveal"
+                onClick={handleShowAnswers}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ delay: 1.2 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🌟 显示答案
+              </ActionButton>
+            </ButtonGroup>
           )}
         </AnimatePresence>
       </ContentWrapper>

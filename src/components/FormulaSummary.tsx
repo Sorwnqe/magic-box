@@ -152,6 +152,27 @@ const AnswerNumber = styled(motion.span)<{ sum: number }>`
   animation-delay: ${props => (props.sum % 10) * 0.1}s;
 `
 
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 15px;
+  align-items: center;
+`
+
+const BackButton = styled(motion.button)`
+  padding: 14px 30px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${COLORS.purple};
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid ${COLORS.purple};
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`
+
 const ContinueButton = styled(motion.button)`
   padding: 14px 40px;
   font-size: 1.1rem;
@@ -230,9 +251,10 @@ const Sparkle = styled(motion.div)<{ size: number; color: string }>`
 
 interface Props {
   onContinue: () => void
+  onBack?: () => void
 }
 
-export default function FormulaSummary({ onContinue }: Props) {
+export default function FormulaSummary({ onContinue, onBack }: Props) {
   // 随机生成闪烁星星
   const sparkles = Array.from({ length: 20 }, (_, i) => ({
     id: i,
@@ -309,16 +331,30 @@ export default function FormulaSummary({ onContinue }: Props) {
           ))}
         </FormulaGrid>
         
-        <ContinueButton
-          onClick={onContinue}
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.1 }}
-        >
-          🎉 完成所有关卡 →
-        </ContinueButton>
+        <ButtonGroup>
+          {onBack && (
+            <BackButton
+              onClick={onBack}
+              whileHover={{ scale: 1.05, x: -3 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+            >
+              ← 返回第四关
+            </BackButton>
+          )}
+          <ContinueButton
+            onClick={onContinue}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1 }}
+          >
+            🎉 完成所有关卡 →
+          </ContinueButton>
+        </ButtonGroup>
       </ContentWrapper>
     </Container>
   )

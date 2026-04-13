@@ -14,6 +14,7 @@ import {
   FaCrown
 } from 'react-icons/fa'
 import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
 // 配色 - 动物城主题
 const COLORS = {
@@ -1055,6 +1056,8 @@ const RightPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 20px;
 `
 
 // 毛玻璃容器
@@ -1062,7 +1065,8 @@ const GlassContainer = styled.div`
   position: relative;
   width: 100%;
   height: calc(100% - 20px);
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 180px);
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px);
   border-radius: 24px;
@@ -1071,6 +1075,10 @@ const GlassContainer = styled.div`
     0 8px 32px rgba(124, 58, 237, 0.15),
     inset 0 0 30px rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  
+  @media (min-width: 1400px) {
+    max-height: calc(100vh - 150px);
+  }
 `
 
 const MagicCanvas = styled.canvas`
@@ -1297,18 +1305,6 @@ const KeypadCard = styled(motion.div)`
   border-radius: 18px;
   padding: 14px;
   box-shadow: 0 6px 25px rgba(124, 58, 237, 0.15);
-  flex: 1;
-`
-
-const KeypadTitle = styled.h3`
-  color: ${COLORS.purple};
-  font-size: 0.85rem;
-  margin: 0 0 10px;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
 `
 
 const KeypadGrid = styled.div`
@@ -1421,6 +1417,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
   // 键盘输入处理
   const handleKeypadClick = (value: string) => {
     if (!activeInput || isUnlocking || result) return
+    playPop() // 键盘音效
     
     const setters = {
       left: setLeftNum,
@@ -1450,18 +1447,21 @@ export default function MagicTowerStage({ onComplete }: Props) {
   
   // 验证密码
   const handleSubmit = () => {
+    playClick() // 点击音效
     const left = parseInt(leftNum)
     const right = parseInt(rightNum)
     const sum = parseInt(sumNum)
     
     if (isNaN(left) || isNaN(right) || isNaN(sum)) {
       setResult({ valid: false, message: '请填写完整的密码算式！' })
+      playError()
       return
     }
     
     // 检查是否已找到过
     if (isPasswordFound(left, right)) {
       setResult({ valid: false, message: '这个密码你已经找到过了，试试其他的！' })
+      playError()
       return
     }
     
@@ -1501,6 +1501,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
             setIsUnlocking(false)
             
             if (validation.valid) {
+              playSuccess() // 成功音效
               // 添加到已找到列表
               const newFound = [...foundPasswords, { left, right }]
               setFoundPasswords(newFound)
@@ -1525,6 +1526,8 @@ export default function MagicTowerStage({ onComplete }: Props) {
                   })
                 }, 1500)
               }
+            } else {
+              playError() // 错误音效
             }
             
             // 清除验证结果动画
@@ -1541,6 +1544,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
   
   // 重置 - 点击再试一次时调用
   const handleReset = () => {
+    playClick() // 点击音效
     setLeftNum('')
     setRightNum('')
     setSumNum('')
@@ -1551,6 +1555,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
   
   // 继续（正确后）
   const handleContinue = () => {
+    playClick() // 点击音效
     setLeftNum('')
     setRightNum('')
     setSumNum('')
@@ -1703,17 +1708,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
               </NumberInputBox>
             </FormulaInputRow>
             
-            {!result ? (
-              <SubmitButton
-                onClick={handleSubmit}
-                disabled={isUnlocking || !leftNum || !rightNum || !sumNum}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <GiKey size={18} />
-                {isUnlocking ? '验证中...' : '🔐 验证密码'}
-              </SubmitButton>
-            ) : (
+            {result && (
               <AnimatePresence>
                 <ResultCard
                   type={result.valid ? 'success' : 'error'}
@@ -1722,25 +1717,6 @@ export default function MagicTowerStage({ onComplete }: Props) {
                   exit={{ opacity: 0, y: -10 }}
                 >
                   <ResultText>{result.message}</ResultText>
-                  <motion.button
-                    style={{
-                      marginTop: '10px',
-                      padding: '8px 20px',
-                      border: 'none',
-                      borderRadius: '10px',
-                      background: result.valid ? COLORS.green : COLORS.purple,
-                      color: 'white',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      width: '100%'
-                    }}
-                    onClick={result.valid ? handleContinue : handleReset}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    {result.valid ? '✨ 继续挑战' : '🔄 再试一次'}
-                  </motion.button>
                 </ResultCard>
               </AnimatePresence>
             )}
@@ -1752,9 +1728,6 @@ export default function MagicTowerStage({ onComplete }: Props) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <KeypadTitle>
-              <GiSparkles size={14} /> 密码键盘
-            </KeypadTitle>
             <KeypadGrid>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <KeypadButton
@@ -1795,6 +1768,22 @@ export default function MagicTowerStage({ onComplete }: Props) {
               {result ? '点击按钮继续' : activeInput === 'left' ? '👉 输入第一个数' : activeInput === 'right' ? '👉 输入第二个数' : activeInput === 'sum' ? '👉 输入答案' : '点击算式框选择'}
             </ActiveInputHint>
           </KeypadCard>
+          
+          {/* 验证按钮放在最下面 */}
+          <SubmitButton
+            onClick={result ? (result.valid ? handleContinue : handleReset) : handleSubmit}
+            disabled={!result && (isUnlocking || !leftNum || !rightNum || !sumNum)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {isUnlocking ? (
+              <><GiKey size={18} /> 验证中...</>
+            ) : result ? (
+              result.valid ? <>✨ 继续挑战</> : <>🔄 再试一次</>
+            ) : (
+              <><GiKey size={18} /> 🔐 验证密码</>
+            )}
+          </SubmitButton>
         </RightPanel>
       </MainContent>
       

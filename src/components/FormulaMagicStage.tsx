@@ -4,6 +4,7 @@ import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
 import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
 // 配色
 const COLORS = {
@@ -262,6 +263,8 @@ const RightPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 20px;
 `
 
 // 魔法台Canvas容器 - 毛玻璃背景
@@ -269,7 +272,8 @@ const MagicCanvasContainer = styled.div`
   position: relative;
   width: 100%;
   height: calc(100% - 20px);
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 180px);
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px);
   border-radius: 24px;
@@ -278,6 +282,10 @@ const MagicCanvasContainer = styled.div`
     0 8px 32px rgba(139, 92, 246, 0.15),
     inset 0 0 30px rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  
+  @media (min-width: 1400px) {
+    max-height: calc(100vh - 150px);
+  }
 `
 
 const MagicCanvas = styled.canvas`
@@ -1040,6 +1048,7 @@ export default function FormulaMagicStage() {
   // 数字键盘点击处理
   const handleKeypadClick = (key: string) => {
     if (!activeInput) return
+    playPop() // 播放键盘音效
 
     const setters = {
       left: setLeftNum,
@@ -1094,12 +1103,14 @@ export default function FormulaMagicStage() {
   }
 
   const handleJudge = async () => {
+    playClick() // 点击音效
     const left = parseInt(leftNum)
     const right = parseInt(rightNum)
     const sum = parseInt(sumNum)
 
     if (isNaN(left) || isNaN(right) || isNaN(sum)) {
       setResult({ valid: false, message: '请填写完整的算式哦！' })
+      playError()
       return
     }
 
@@ -1173,6 +1184,7 @@ export default function FormulaMagicStage() {
     animateResult()
 
     if (validation.valid) {
+      playSuccess() // 成功音效
       setSuccessCount(prev => prev + 1)
 
       // 庆祝特效
@@ -1183,12 +1195,15 @@ export default function FormulaMagicStage() {
         colors: ['#8b5cf6', '#22c55e', '#facc15', '#22d3ee']
       })
       // 等待用户点击"再试一次"按钮
+    } else {
+      playError() // 错误音效
     }
 
     return () => cancelAnimationFrame(animationId)
   }
 
   const handleReset = () => {
+    playClick() // 点击音效
     // 清除结果动画
     resultAnimRef.current = { 
       active: false, 

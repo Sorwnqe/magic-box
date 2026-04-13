@@ -6,6 +6,7 @@ import { useMagicBox } from '../stores/useMagicBox'
 import { backgrounds, zootopiaColors as COLORS } from '../assets/images'
 import { IoArrowDown, IoBackspace } from 'react-icons/io5'
 import { MdClear } from 'react-icons/md'
+import { playPop, playClick, playSuccess } from '../hooks/useSound'
 
 // 线性粒子背景
 function ParticleLines() {
@@ -598,6 +599,7 @@ export default function MagicMainApp() {
 
   const handleSubmit = () => {
     if (!inputValue.trim()) return
+    playClick() // 点击音效
     const v = magicBox.validateInput(inputValue)
     if (!v.valid) { showToast(v.message!); return }
     
@@ -644,8 +646,9 @@ export default function MagicMainApp() {
                 o: (outputNum % 10).toString(), 
                 show: true 
               })
+              playSuccess() // 成功音效
               // 更大的礼花效果
-              confetti({ 
+              confetti({
                 particleCount: 200, 
                 spread: 100, 
                 origin: { y: 0.5 }, 
@@ -689,13 +692,14 @@ export default function MagicMainApp() {
   }, [])
 
   const handleKey = (k: string) => {
+    playPop() // 键盘音效
     if (k === 'C') setInputValue('')
     else if (k === '←') setInputValue(v => v.slice(0, -1))
     else if (inputValue.length < 2) setInputValue(v => v + k)
   }
 
   return (
-    <Page>
+    <Container>
       <Bg />
       <ParticleLines />
       
@@ -717,7 +721,7 @@ export default function MagicMainApp() {
         <Title>第一关：数字魔法盒</Title>
       </Header>
       
-      <Layout>
+      <MainContent>
         {/* 左侧：输入/结果 */}
         <LeftPanel>
           <NumCard>
@@ -741,27 +745,31 @@ export default function MagicMainApp() {
           </NumCard>
         </LeftPanel>
 
-        {/* 中间：魔盒区域（只显示毛玻璃框） */}
+        {/* 中间：魔盒区域 */}
         <CenterPanel>
           <GlassBox ref={glassBoxRef} />
         </CenterPanel>
 
         {/* 右侧：键盘 + 按钮 */}
         <RightPanel>
-          <Display>{inputValue || '—'}</Display>
+          <InputCard>
+            <Display>{inputValue || '—'}</Display>
+          </InputCard>
           
-          <Keypad>
-            {[1,2,3,4,5,6,7,8,9].map(n => (
-              <Key key={n} onClick={() => handleKey(String(n))} whileTap={{ scale: 0.92 }}>{n}</Key>
-            ))}
-            <Key className="fn" onClick={() => handleKey('C')} whileTap={{ scale: 0.92 }}><MdClear /></Key>
-            <Key onClick={() => handleKey('0')} whileTap={{ scale: 0.92 }}>0</Key>
-            <Key className="fn back" onClick={() => handleKey('←')} whileTap={{ scale: 0.92 }}><IoBackspace /></Key>
-          </Keypad>
+          <KeypadCard>
+            <Keypad>
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <Key key={n} onClick={() => handleKey(String(n))} whileTap={{ scale: 0.92 }}>{n}</Key>
+              ))}
+              <Key className="fn" onClick={() => handleKey('C')} whileTap={{ scale: 0.92 }}><MdClear /></Key>
+              <Key onClick={() => handleKey('0')} whileTap={{ scale: 0.92 }}>0</Key>
+              <Key className="fn back" onClick={() => handleKey('←')} whileTap={{ scale: 0.92 }}><IoBackspace /></Key>
+            </Keypad>
+          </KeypadCard>
           
           <Btn primary onClick={handleSubmit} whileTap={{ scale: 0.97 }}>放入魔盒</Btn>
         </RightPanel>
-      </Layout>
+      </MainContent>
 
       <AnimatePresence>
         {toast && (
@@ -774,7 +782,7 @@ export default function MagicMainApp() {
           </Toast>
         )}
       </AnimatePresence>
-    </Page>
+    </Container>
   )
 }
 
@@ -786,19 +794,21 @@ const ParticleCanvas = styled.canvas`
   z-index: 1;
 `
 
-const Page = styled.div`
-  min-height: 100vh;
+// 和2、3关一致的布局结构
+const Container = styled.div`
+  width: 100%;
+  height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
+  flex-direction: column;
   position: relative;
+  overflow: hidden;
 `
 
 const Bg = styled.div`
   position: fixed;
   inset: 0;
   background: url(${backgrounds.policeStation}) center/cover;
+  z-index: 0;
   &::after {
     content: '';
     position: absolute;
@@ -808,20 +818,20 @@ const Bg = styled.div`
 `
 
 const Header = styled.div`
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  text-align: center;
+  padding: 10px;
   z-index: 10;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
-  padding: 12px 40px;
+  margin: 0 auto;
+  width: fit-content;
+  padding: 10px 30px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 `
 
 const Title = styled.h1`
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 50%, ${COLORS.primaryLight} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -829,24 +839,21 @@ const Title = styled.h1`
   font-weight: 700;
 `
 
-const Layout = styled.div`
-  position: relative;
-  z-index: 2;
+const MainContent = styled.div`
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 40px;
-  width: 100%;
-  max-width: 1400px;
-  justify-content: center;
-  padding: 0 20px;
+  gap: 20px;
+  padding: 15px 25px 90px;
+  z-index: 10;
 `
 
+// 三栏布局 - 固定宽度
 const LeftPanel = styled.div`
+  flex: 0 0 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  min-width: 180px;
+  gap: 12px;
 `
 
 const NumCard = styled.div<{ glow?: boolean }>`
@@ -907,26 +914,32 @@ const ArrowIcon = styled.div`
 `
 
 const CenterPanel = styled.div`
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1.5;
-  min-width: 400px;
+  position: relative;
 `
 
 const GlassBox = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
-  max-width: 520px;
-  min-width: 380px;
+  height: calc(100% - 20px);
+  max-height: calc(100vh - 180px);
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 36px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(30, 64, 175, 0.25);
+  box-shadow: 0 8px 32px rgba(30, 64, 175, 0.25),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
+  
+  @media (min-width: 1400px) {
+    max-height: calc(100vh - 150px);
+  }
 `
 
 const FullscreenCanvas = styled.div`
@@ -943,26 +956,40 @@ const MagicCanvas = styled.canvas`
 `
 
 const RightPanel = styled.div`
-  background: rgba(255,255,255,0.96);
-  border-radius: 24px;
-  padding: 28px;
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.12);
-  min-width: 240px;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 20px;
+`
+
+const InputCard = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 6px 25px rgba(30, 64, 175, 0.15);
+`
+
+const KeypadCard = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 6px 25px rgba(30, 64, 175, 0.15);
 `
 
 const Display = styled.div`
-  height: 80px;
-  background: linear-gradient(135deg, ${COLORS.primary}06, ${COLORS.purple}06);
+  height: 70px;
+  background: linear-gradient(135deg, ${COLORS.primary}08, ${COLORS.purple}08);
   border: 2px solid ${COLORS.primaryLight};
-  border-radius: 16px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 52px;
+  font-size: 48px;
   font-weight: 800;
   color: ${COLORS.primary};
 `
@@ -970,53 +997,64 @@ const Display = styled.div`
 const Keypad = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 `
 
 const Key = styled(motion.button)`
-  height: 54px;
-  border-radius: 14px;
+  height: 44px;
+  border-radius: 10px;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 1.3rem;
   font-weight: 700;
   cursor: pointer;
-  border: 2px solid ${COLORS.primaryLight};
-  background: ${COLORS.primary}06;
+  border: none;
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
   color: ${COLORS.primary};
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.1);
   
-  &:hover { background: ${COLORS.primary}12; }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.97);
+  }
   
   &.fn {
-    border-color: #e11d48;
-    background: #e11d4808;
-    color: #e11d48;
-    font-size: 20px;
+    background: linear-gradient(135deg, #fecaca, #fca5a5);
+    color: #dc2626;
+    font-size: 1.1rem;
   }
   
   &.back {
-    border-color: ${COLORS.gold};
-    background: ${COLORS.gold}08;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
     color: ${COLORS.accent};
   }
 `
 
 const Btn = styled(motion.button)<{ primary?: boolean }>`
-  flex: 1;
-  padding: 16px 20px;
+  width: 100%;
+  padding: 14px;
   border: none;
-  border-radius: 14px;
-  font-size: 16px;
+  border-radius: 12px;
+  font-size: 1.1rem;
   font-weight: 700;
   color: white;
   cursor: pointer;
   background: ${p => p.primary
     ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight})`
     : `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.purpleLight})`};
-  box-shadow: 0 5px 20px ${p => p.primary ? 'rgba(30,64,175,0.35)' : 'rgba(139,92,246,0.35)'};
+  box-shadow: 0 4px 20px ${p => p.primary ? 'rgba(30,64,175,0.4)' : 'rgba(139,92,246,0.4)'};
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px ${p => p.primary ? 'rgba(30,64,175,0.45)' : 'rgba(139,92,246,0.45)'};
+  }
 `
 
 const Toast = styled(motion.div)`

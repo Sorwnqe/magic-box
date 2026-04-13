@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import confetti from 'canvas-confetti'
 import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
 // 配色 - 动物城主题
 const COLORS = {
@@ -818,7 +819,8 @@ const GlassContainer = styled.div`
   position: relative;
   width: 100%;
   height: calc(100% - 20px);
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 180px);
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -827,6 +829,10 @@ const GlassContainer = styled.div`
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(251, 146, 60, 0.15),
     inset 0 0 30px rgba(255, 255, 255, 0.1);
+  
+  @media (min-width: 1400px) {
+    max-height: calc(100vh - 150px);
+  }
 `
 
 const RightSection = styled.div`
@@ -834,6 +840,8 @@ const RightSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 20px;
 `
 
 const Card = styled(motion.div)`
@@ -934,14 +942,6 @@ const KeypadCard = styled(motion.div)`
   border-radius: 16px;
   padding: 14px;
   box-shadow: 0 6px 25px rgba(251, 146, 60, 0.2);
-  flex: 1;
-`
-
-const KeypadTitle = styled.h3`
-  color: ${COLORS.orange};
-  font-size: 1rem;
-  margin: 0 0 12px;
-  text-align: center;
 `
 
 const KeypadGrid = styled.div`
@@ -1098,6 +1098,7 @@ export default function MagicArrayStage() {
   // 键盘输入处理
   const handleKeypadClick = (value: string) => {
     if (!activeInput) return
+    playPop() // 键盘音效
     
     const setters = {
       left: setLeftNum,
@@ -1161,12 +1162,14 @@ export default function MagicArrayStage() {
   
   // 提交验证
   const handleSubmit = () => {
+    playClick() // 点击音效
     const left = parseInt(leftNum)
     const right = parseInt(rightNum)
     const sum = parseInt(sumNum)
     
     if (isNaN(left) || isNaN(right) || isNaN(sum)) {
       startValidationAnimation(false, '请填写完整的算式！')
+      playError()
       return
     }
     
@@ -1176,6 +1179,10 @@ export default function MagicArrayStage() {
       const validation = validateFormula(left, right, sum)
       startValidationAnimation(validation.valid, validation.message)
       
+      if (!validation.valid) {
+        playError() // 错误音效
+      }
+      
       if (validation.valid) {
         // 检查是否已经找到过这个算式
         const alreadyFound = foundFormulas.some(
@@ -1183,6 +1190,7 @@ export default function MagicArrayStage() {
         )
         
         if (!alreadyFound) {
+          playSuccess() // 成功音效
           const newFoundFormulas = [...foundFormulas, { left, right }]
           setFoundFormulas(newFoundFormulas)
           
@@ -1219,6 +1227,7 @@ export default function MagicArrayStage() {
   
   // 重置
   const handleReset = () => {
+    playClick() // 点击音效
     setLeftNum('')
     setRightNum('')
     setSumNum('')
@@ -1337,15 +1346,6 @@ export default function MagicArrayStage() {
                 {sumNum || <NumberInputPlaceholder>?</NumberInputPlaceholder>}
               </NumberInputBox>
             </FormulaInputRow>
-            
-            <SubmitButton
-              onClick={validationResult ? handleReset : handleSubmit}
-              disabled={!validationResult && (!leftNum || !rightNum || !sumNum || !!flyingFormula)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              {flyingFormula ? '🔮 验证中...' : validationResult ? '🔄 再试一次' : '⚡ 闪电验证'}
-            </SubmitButton>
           </Card>
           
           {/* 数字键盘 */}
@@ -1354,7 +1354,6 @@ export default function MagicArrayStage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <KeypadTitle>⌨️ 点击输入</KeypadTitle>
             <KeypadGrid>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <KeypadButton
@@ -1398,6 +1397,16 @@ export default function MagicArrayStage() {
               {!activeInput && '点击算式框选择'}
             </ActiveInputHint>
           </KeypadCard>
+          
+          {/* 验证按钮放在最下面 */}
+          <SubmitButton
+            onClick={validationResult ? handleReset : handleSubmit}
+            disabled={!validationResult && (!leftNum || !rightNum || !sumNum || !!flyingFormula)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {flyingFormula ? '🔮 验证中...' : validationResult ? '🔄 再试一次' : '⚡ 闪电验证'}
+          </SubmitButton>
         </RightSection>
       </MainContent>
       
