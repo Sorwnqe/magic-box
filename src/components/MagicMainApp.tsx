@@ -123,7 +123,8 @@ function MagicBoxCanvas({
   displayNumber,
   hasNumber,
   flyingNumber,
-  poppingNumber
+  poppingNumber,
+  glassBoxRef
 }: { 
   isSpinning: boolean
   isOpening: boolean
@@ -131,6 +132,7 @@ function MagicBoxCanvas({
   hasNumber: boolean
   flyingNumber: FlyingNumber | null
   poppingNumber: PoppingNumber | null
+  glassBoxRef: React.RefObject<HTMLDivElement | null>
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
@@ -156,9 +158,14 @@ function MagicBoxCanvas({
       return
     }
     
-    // 魔盒位置 - Canvas 中心
-    const cx = w * 0.5
-    const cy = h * 0.5
+    // 魔盒位置 - 使用 GlassBox 的中心位置
+    let cx = w * 0.5
+    let cy = h * 0.5
+    if (glassBoxRef.current) {
+      const boxRect = glassBoxRef.current.getBoundingClientRect()
+      cx = boxRect.left + boxRect.width / 2
+      cy = boxRect.top + boxRect.height / 2
+    }
     
     ctx.clearRect(0, 0, w, h)
     
@@ -477,7 +484,7 @@ function MagicBoxCanvas({
     }
     
     animationRef.current = requestAnimationFrame(draw)
-  }, [isSpinning, isOpening, displayNumber, hasNumber, flyingNumber, poppingNumber])
+  }, [isSpinning, isOpening, displayNumber, hasNumber, flyingNumber, poppingNumber, glassBoxRef])
   
   useEffect(() => {
     const canvas = canvasRef.current
@@ -525,6 +532,9 @@ export default function MagicMainApp() {
   const [input, setInput] = useState({ num: '--', t: '-', o: '-' })
   const [output, setOutput] = useState({ num: '--', t: '-', o: '-', show: false })
   const [toast, setToast] = useState('')
+  
+  // GlassBox ref for positioning
+  const glassBoxRef = useRef<HTMLDivElement>(null)
   
   // 动画状态
   const [flyingNumber, setFlyingNumber] = useState<FlyingNumber | null>(null)
@@ -698,6 +708,7 @@ export default function MagicMainApp() {
           hasNumber={hasNumber}
           flyingNumber={flyingNumber}
           poppingNumber={poppingNumber}
+          glassBoxRef={glassBoxRef}
         />
       </FullscreenCanvas>
       
@@ -730,9 +741,9 @@ export default function MagicMainApp() {
           </NumCard>
         </LeftPanel>
 
-        {/* 中间：魔盒区域（只显示毙玻璃框） */}
+        {/* 中间：魔盒区域（只显示毛玻璃框） */}
         <CenterPanel>
-          <GlassBox />
+          <GlassBox ref={glassBoxRef} />
         </CenterPanel>
 
         {/* 右侧：键盘 + 按钮 */}

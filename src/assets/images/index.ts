@@ -52,12 +52,6 @@ export const expressions = {
   teamVictory: new URL('./expressions/team-victory.png', import.meta.url).href,
 }
 
-// UI元素
-export const ui = {
-  dialogBunny: new URL('./ui/ui-dialog-bunny.png', import.meta.url).href,
-  dialogFox: new URL('./ui/ui-dialog-fox.png', import.meta.url).href,
-}
-
 // 道具图片
 export const items = {
   // 魔法盒 - 第一关
@@ -114,7 +108,6 @@ export default {
   characters,
   backgrounds,
   expressions,
-  ui,
   items,
   colors: zootopiaColors,
 }

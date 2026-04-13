@@ -5,8 +5,7 @@ import {
   MeshTransmissionMaterial,
   RoundedBox,
   Sparkles,
-  Text,
-  Environment
+  Text
 } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
@@ -657,7 +656,7 @@ export default function MagicMainApp() {
                 <ambientLight intensity={0.6} />
                 <pointLight position={[10, 10, 10]} intensity={0.8} color="#ffffff" />
                 <pointLight position={[-10, -10, -5]} intensity={0.4} color={COLORS.cyan} />
-                <Environment preset="sunset" />
+                {/* Environment removed - using local lights only */}
                 <CuteMagicBox3D
                   isSpinning={isSpinning}
                   isOpening={isOpening}

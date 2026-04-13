@@ -1,18 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { 
-  Float, 
-  MeshTransmissionMaterial,
-  Sparkles,
-  Environment
-} from '@react-three/drei'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
-import { keyframes } from '@emotion/react'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import confetti from 'canvas-confetti'
-import * as THREE from 'three'
-import { backgrounds, characters, expressions, items, zootopiaColors } from '../assets/images'
+import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
 
 // 配色 - 动物城主题
 const COLORS = {
@@ -26,11 +16,6 @@ const COLORS = {
   pink: '#f472b6'
 }
 
-// 范例展示
-const EXAMPLE_FORMULAS = [
-  { left: 13, right: 31, sum: 44 },
-  { left: 22, right: 22, sum: 44 },
-]
 
 // 判断是否是反转数对
 function isReversePair(a: number, b: number): boolean {
@@ -56,7 +41,7 @@ function validateFormula(left: number, right: number, sum: number): {
   } else if (!sumIs44 && sumCorrect && isPair) {
     return {
       valid: false,
-      message: `😅 这是反转数对，但和是 ${sum}，不是 44 哦！提示：个位相加得4，十位相加得4！`
+      message: `😅 这是反转数对，但和是 ${sum}，不是 44 哦！`
     }
   } else if (isPair && !sumCorrect) {
     return {
@@ -66,7 +51,7 @@ function validateFormula(left: number, right: number, sum: number): {
   } else if (!isPair && sumIs44) {
     return {
       valid: false,
-      message: `😅 和是44，但 ${left} 和 ${right} 不是反转数对！试试交换十位和个位的数？`
+      message: `😅 和是44，但 ${left} 和 ${right} 不是反转数对！`
     }
   } else {
     return {
@@ -178,111 +163,524 @@ const ParticleCanvas = styled.canvas`
   z-index: 1;
 `
 
-// 3D 魔法阵
-function MagicArray3D({ activated, energy }: { activated: boolean, energy: number }) {
-  const groupRef = useRef<THREE.Group>(null)
-  const ringRefs = useRef<THREE.Mesh[]>([])
+// 飞入的算式数字
+interface FlyingFormula {
+  left: string
+  right: string
+  sum: string
+  progress: number
+  startX: number
+  startY: number
+}
+
+// 验证结果弹出
+interface ValidationResult {
+  valid: boolean
+  message: string
+  progress: number
+  scale: number
+}
+
+// 鼓励语
+const CORRECT_MESSAGES = [
+  '太厉害了！',
+  '完美！你真棒！',
+  '答对啦！继续加油！',
+  '魔法能量充泛！',
+  '你掌握规律了！'
+]
+
+const WRONG_MESSAGES = [
+  '没关系，再试一次！',
+  '加油！你可以的！',
+  '别灰心，检查一下~',
+  '差一点点，再想想！',
+  '仔细看看规律哦~'
+]
+
+// 魔法台 Canvas 组件 - 四十四符文阵
+function MagicPlatformCanvas({
+  energy,
+  flyingFormula,
+  validationResult
+}: {
+  energy: number
+  flyingFormula: FlyingFormula | null
+  validationResult: ValidationResult | null
+  onValidationComplete: () => void
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>(0)
+  const particlesRef = useRef<Array<{
+    x: number
+    y: number
+    vx: number
+    vy: number
+    size: number
+    color: string
+    alpha: number
+    life: number
+    type: 'star' | 'sparkle' | 'rune'
+  }>>([])
+  const floatPhaseRef = useRef(0)
+  const runeRotationRef = useRef(0)
   
-  useFrame((state) => {
-    const time = state.clock.elapsedTime
+  // 绘制六芒星
+  const drawHexagram = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, rotation: number) => {
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(rotation)
     
-    if (groupRef.current) {
-      groupRef.current.rotation.z = time * 0.2
-      groupRef.current.position.y = Math.sin(time * 0.5) * 0.1
+    // 第一个三角形（向上）
+    ctx.beginPath()
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * Math.PI * 2) / 3 - Math.PI / 2
+      const px = Math.cos(angle) * size
+      const py = Math.sin(angle) * size
+      if (i === 0) ctx.moveTo(px, py)
+      else ctx.lineTo(px, py)
+    }
+    ctx.closePath()
+    ctx.stroke()
+    
+    // 第二个三角形（向下）
+    ctx.beginPath()
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * Math.PI * 2) / 3 + Math.PI / 2
+      const px = Math.cos(angle) * size
+      const py = Math.sin(angle) * size
+      if (i === 0) ctx.moveTo(px, py)
+      else ctx.lineTo(px, py)
+    }
+    ctx.closePath()
+    ctx.stroke()
+    
+    ctx.restore()
+  }
+  
+  // 绘制符文字符
+  const drawRune = (ctx: CanvasRenderingContext2D, x: number, y: number, char: string, size: number, alpha: number) => {
+    ctx.save()
+    ctx.globalAlpha = alpha
+    ctx.font = `bold ${size}px "Segoe UI Symbol", system-ui`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(char, x, y)
+    ctx.restore()
+  }
+  
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    const rect = canvas.getBoundingClientRect()
+    const w = rect.width
+    const h = rect.height
+    
+    if (w <= 0 || h <= 0) {
+      animationRef.current = requestAnimationFrame(draw)
+      return
     }
     
-    // 各环独立旋转
-    ringRefs.current.forEach((ring, i) => {
-      if (ring) {
-        ring.rotation.z = time * (0.3 + i * 0.15) * (i % 2 === 0 ? 1 : -1)
+    const cx = w * 0.5
+    const cy = h * 0.5
+    
+    ctx.clearRect(0, 0, w, h)
+    
+    // 更新动画相位
+    floatPhaseRef.current += 0.015
+    runeRotationRef.current += 0.008
+    const floatY = Math.sin(floatPhaseRef.current) * 5
+    const pulse = Math.sin(floatPhaseRef.current * 2) * 0.15 + 0.85
+    
+    // 魔法阵中心
+    const platformY = cy + floatY
+    
+    ctx.save()
+    ctx.translate(cx, platformY)
+    
+    // ===== 最外层光晕 =====
+    const outerGlow = ctx.createRadialGradient(0, 0, 100, 0, 0, 220)
+    outerGlow.addColorStop(0, `rgba(251, 146, 60, ${0.25 * pulse})`)
+    outerGlow.addColorStop(0.4, `rgba(250, 204, 21, ${0.15 * pulse})`)
+    outerGlow.addColorStop(0.7, `rgba(34, 197, 94, ${0.1 * pulse})`)
+    outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.fillStyle = outerGlow
+    ctx.beginPath()
+    ctx.arc(0, 0, 220, 0, Math.PI * 2)
+    ctx.fill()
+    
+    // ===== 外圈装饰环 (旋转的符文环) =====
+    ctx.save()
+    ctx.rotate(runeRotationRef.current)
+    
+    // 外圈线
+    ctx.strokeStyle = `rgba(251, 146, 60, ${0.5 * pulse})`
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(0, 0, 165, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 外圈符文 (数字4和符号)
+    const outerRunes = ['4', '✦', '4', '◇', '4', '✧', '4', '◈']
+    ctx.fillStyle = `rgba(251, 146, 60, ${0.7 * pulse})`
+    ctx.shadowColor = '#fb923c'
+    ctx.shadowBlur = 10
+    for (let i = 0; i < outerRunes.length; i++) {
+      const angle = (i * Math.PI * 2) / outerRunes.length
+      const rx = Math.cos(angle) * 165
+      const ry = Math.sin(angle) * 165
+      drawRune(ctx, rx, ry, outerRunes[i], 18, 0.8)
+    }
+    ctx.shadowBlur = 0
+    ctx.restore()
+    
+    // ===== 中圈 (反向旋转) =====
+    ctx.save()
+    ctx.rotate(-runeRotationRef.current * 1.3)
+    
+    ctx.strokeStyle = `rgba(250, 204, 21, ${0.6 * pulse})`
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.arc(0, 0, 125, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 中圈六芒星
+    ctx.strokeStyle = `rgba(250, 204, 21, ${0.5 * pulse})`
+    ctx.lineWidth = 2
+    drawHexagram(ctx, 0, 0, 110, 0)
+    
+    ctx.restore()
+    
+    // ===== 内圈 (缓慢旋转) =====
+    ctx.save()
+    ctx.rotate(runeRotationRef.current * 0.5)
+    
+    // 内圈能量环
+    ctx.strokeStyle = `rgba(34, 197, 94, ${0.6 * pulse})`
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(0, 0, 85, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 内六芒星
+    ctx.strokeStyle = `rgba(34, 197, 94, ${0.4 * pulse})`
+    ctx.lineWidth = 1.5
+    drawHexagram(ctx, 0, 0, 70, Math.PI / 6)
+    
+    ctx.restore()
+    
+    // ===== 中心核心 - 大"44" =====
+    // 核心外圈光晕
+    const coreGlow = ctx.createRadialGradient(0, 0, 20, 0, 0, 80)
+    const coreColor = energy >= 2 ? 'rgba(34, 197, 94,' : 'rgba(251, 146, 60,'
+    coreGlow.addColorStop(0, coreColor + `${0.95 * pulse})`)
+    coreGlow.addColorStop(0.4, coreColor + `${0.5 * pulse})`)
+    coreGlow.addColorStop(1, coreColor + '0)')
+    ctx.fillStyle = coreGlow
+    ctx.beginPath()
+    ctx.arc(0, 0, 80, 0, Math.PI * 2)
+    ctx.fill()
+    
+    // 核心外圈边框
+    ctx.strokeStyle = energy >= 2 ? '#22c55e' : '#fb923c'
+    ctx.lineWidth = 4
+    ctx.beginPath()
+    ctx.arc(0, 0, 60, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 核心内圈边框
+    ctx.strokeStyle = energy >= 2 ? 'rgba(34, 197, 94, 0.5)' : 'rgba(251, 146, 60, 0.5)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(0, 0, 50, 0, Math.PI * 2)
+    ctx.stroke()
+    
+    // 核心背景
+    const coreBg = ctx.createRadialGradient(0, 0, 0, 0, 0, 55)
+    coreBg.addColorStop(0, energy >= 2 ? 'rgba(34, 197, 94, 0.98)' : 'rgba(251, 146, 60, 0.98)')
+    coreBg.addColorStop(0.7, energy >= 2 ? 'rgba(22, 163, 74, 0.95)' : 'rgba(234, 88, 12, 0.95)')
+    coreBg.addColorStop(1, energy >= 2 ? 'rgba(21, 128, 61, 0.9)' : 'rgba(194, 65, 12, 0.9)')
+    ctx.fillStyle = coreBg
+    ctx.beginPath()
+    ctx.arc(0, 0, 55, 0, Math.PI * 2)
+    ctx.fill()
+    
+    // 中心 "44" 数字 - 简单清晰
+    ctx.font = 'bold 48px system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText('44', 0, 0)
+    
+    ctx.restore()
+    
+    // ===== 绘制飞入的算式 =====
+    if (flyingFormula) {
+      const t = flyingFormula.progress
+      const startX = flyingFormula.startX
+      const startY = flyingFormula.startY
+      const endX = cx
+      const endY = platformY
+      
+      // 贝塞尔曲线控制点
+      const cp1X = startX - 100
+      const cp1Y = startY - 180
+      const cp2X = endX + 100
+      const cp2Y = endY - 120
+      
+      // 三次贝塞尔曲线
+      const mt = 1 - t
+      const x = mt*mt*mt*startX + 3*mt*mt*t*cp1X + 3*mt*t*t*cp2X + t*t*t*endX
+      const y = mt*mt*mt*startY + 3*mt*mt*t*cp1Y + 3*mt*t*t*cp2Y + t*t*t*endY
+      
+      // 缩放和旋转效果
+      const scale = 1.3 - t * 0.5
+      const rotation = t * Math.PI * 2
+      
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(rotation * 0.3)
+      ctx.scale(scale, scale)
+      
+      // 发光背景
+      ctx.shadowColor = '#fbbf24'
+      ctx.shadowBlur = 50
+      
+      // 算式背景
+      const bgGrad = ctx.createLinearGradient(-90, 0, 90, 0)
+      bgGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)')
+      bgGrad.addColorStop(0.5, 'rgba(254, 243, 199, 0.98)')
+      bgGrad.addColorStop(1, 'rgba(255, 255, 255, 0.98)')
+      ctx.fillStyle = bgGrad
+      ctx.beginPath()
+      ctx.roundRect(-95, -32, 190, 64, 16)
+      ctx.fill()
+      
+      // 算式边框
+      ctx.strokeStyle = '#fb923c'
+      ctx.lineWidth = 3
+      ctx.stroke()
+      ctx.shadowBlur = 0
+      
+      // 算式文字
+      ctx.font = 'bold 30px var(--font-display), system-ui'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#ea580c'
+      ctx.fillText(`${flyingFormula.left} + ${flyingFormula.right} = ${flyingFormula.sum}`, 0, 2)
+      
+      ctx.restore()
+      
+      // 生成星星粒子拖尾
+      if (Math.random() < 0.6 && particlesRef.current.length < 40) {
+        const colors = ['#fbbf24', '#fb923c', '#22c55e', '#facc15']
+        particlesRef.current.push({
+          x: x + (Math.random() - 0.5) * 40,
+          y: y + (Math.random() - 0.5) * 30,
+          vx: (Math.random() - 0.5) * 5,
+          vy: -Math.random() * 4 - 2,
+          size: Math.random() * 10 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          life: 50,
+          type: Math.random() > 0.4 ? 'star' : 'sparkle'
+        })
       }
+    }
+    
+    // ===== 绘制验证结果 - 魔法阵风格 + 鼓励语 =====
+    if (validationResult) {
+      const t = validationResult.progress
+      const ease = 1 - Math.pow(1 - t, 4)
+      const scale = 0.3 + ease * 0.7
+      const isValid = validationResult.valid
+      
+      // 获取鼓励语（基于 message 的 hash 选择）
+      const msgHash = validationResult.message.length % 5
+      const encourageText = isValid ? CORRECT_MESSAGES[msgHash] : WRONG_MESSAGES[msgHash]
+      
+      ctx.save()
+      ctx.translate(cx, platformY)
+      ctx.scale(scale, scale)
+      
+      // 外圈魔法光环 - 更大
+      const ringGlow = ctx.createRadialGradient(0, 0, 70, 0, 0, 180)
+      if (isValid) {
+        ringGlow.addColorStop(0, 'rgba(34, 197, 94, 0.9)')
+        ringGlow.addColorStop(0.5, 'rgba(34, 197, 94, 0.4)')
+        ringGlow.addColorStop(1, 'rgba(34, 197, 94, 0)')
+      } else {
+        ringGlow.addColorStop(0, 'rgba(239, 68, 68, 0.9)')
+        ringGlow.addColorStop(0.5, 'rgba(239, 68, 68, 0.4)')
+        ringGlow.addColorStop(1, 'rgba(239, 68, 68, 0)')
+      }
+      ctx.fillStyle = ringGlow
+      ctx.beginPath()
+      ctx.arc(0, 0, 180, 0, Math.PI * 2)
+      ctx.fill()
+      
+      // 旋转的符文环
+      ctx.save()
+      ctx.rotate(floatPhaseRef.current * 2)
+      ctx.strokeStyle = isValid ? 'rgba(34, 197, 94, 0.6)' : 'rgba(239, 68, 68, 0.6)'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(0, 0, 120, 0, Math.PI * 2)
+      ctx.stroke()
+      
+      // 周围的小符文
+      const symbols = isValid ? ['✓', '★', '✓', '✦', '✓', '★', '✓', '✨'] : ['✗', '×', '✗', '‼', '✗', '×', '✗', '❗']
+      ctx.fillStyle = isValid ? '#22c55e' : '#ef4444'
+      symbols.forEach((sym, i) => {
+        const angle = (i / symbols.length) * Math.PI * 2
+        const rx = Math.cos(angle) * 120
+        const ry = Math.sin(angle) * 120
+        ctx.font = 'bold 16px system-ui'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(sym, rx, ry)
+      })
+      ctx.restore()
+      
+      // 中心结果圆 - 更大
+      const centerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 70)
+      if (isValid) {
+        centerGrad.addColorStop(0, '#4ade80')
+        centerGrad.addColorStop(0.5, '#22c55e')
+        centerGrad.addColorStop(1, '#16a34a')
+      } else {
+        centerGrad.addColorStop(0, '#f87171')
+        centerGrad.addColorStop(0.5, '#ef4444')
+        centerGrad.addColorStop(1, '#dc2626')
+      }
+      ctx.beginPath()
+      ctx.arc(0, 0, 70, 0, Math.PI * 2)
+      ctx.fillStyle = centerGrad
+      ctx.shadowColor = isValid ? '#22c55e' : '#ef4444'
+      ctx.shadowBlur = 50
+      ctx.fill()
+      ctx.shadowBlur = 0
+      
+      // 结果图标
+      ctx.font = 'bold 56px system-ui'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(isValid ? '✓' : '✗', 0, -5)
+      
+      // 鼓励文字 - 在图标下方
+      ctx.font = 'bold 22px "Nunito", system-ui'
+      ctx.fillStyle = '#ffffff'
+      ctx.shadowColor = isValid ? '#166534' : '#991b1b'
+      ctx.shadowBlur = 4
+      ctx.fillText(encourageText, 0, 105)
+      ctx.shadowBlur = 0
+      
+      ctx.restore()
+    }
+    
+    // ===== 更新并绘制粒子 =====
+    particlesRef.current = particlesRef.current.filter(p => {
+      p.x += p.vx
+      p.y += p.vy
+      p.vy += 0.12
+      p.life--
+      p.alpha = Math.min(p.life / 35, 1)
+      
+      if (p.life <= 0) return false
+      
+      ctx.save()
+      ctx.globalAlpha = p.alpha
+      ctx.translate(p.x, p.y)
+      
+      if (p.type === 'star') {
+        // 绘制星星
+        ctx.fillStyle = p.color
+        ctx.shadowColor = p.color
+        ctx.shadowBlur = 12
+        ctx.beginPath()
+        for (let i = 0; i < 5; i++) {
+          const angle = (i * Math.PI * 2) / 5 - Math.PI / 2
+          const px = Math.cos(angle) * p.size
+          const py = Math.sin(angle) * p.size
+          if (i === 0) ctx.moveTo(px, py)
+          else ctx.lineTo(px, py)
+          
+          const innerAngle = ((i + 0.5) * Math.PI * 2) / 5 - Math.PI / 2
+          const innerX = Math.cos(innerAngle) * (p.size * 0.4)
+          const innerY = Math.sin(innerAngle) * (p.size * 0.4)
+          ctx.lineTo(innerX, innerY)
+        }
+        ctx.closePath()
+        ctx.fill()
+      } else {
+        // 绘制闪光圆点
+        ctx.fillStyle = p.color
+        ctx.shadowColor = p.color
+        ctx.shadowBlur = 10
+        ctx.beginPath()
+        ctx.arc(0, 0, p.size * 0.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      
+      ctx.restore()
+      return true
     })
-  })
-
-  const ringCount = 3
-  const maxEnergy = 2 // 最多2个正确答案
-
-  return (
-    <Float speed={2} rotationIntensity={0.1} floatIntensity={0.3}>
-      <group ref={groupRef}>
-        {/* 魔法阵环 */}
-        {Array.from({ length: ringCount }).map((_, i) => (
-          <mesh 
-            key={i} 
-            ref={(el) => { if (el) ringRefs.current[i] = el }}
-            position={[0, 0, -i * 0.1]}
-          >
-            <torusGeometry args={[1.2 - i * 0.25, 0.05, 16, 64]} />
-            <meshStandardMaterial 
-              color={i < energy ? COLORS.green : activated ? COLORS.cyan : COLORS.purple}
-              emissive={i < energy ? COLORS.green : activated ? COLORS.cyan : COLORS.purple}
-              emissiveIntensity={i < energy ? 0.8 : activated ? 0.5 : 0.2}
-              transparent
-              opacity={0.9}
-            />
-          </mesh>
-        ))}
-        
-        {/* 中心44符文 */}
-        <mesh position={[0, 0, 0.1]}>
-          <circleGeometry args={[0.5, 32]} />
-          <MeshTransmissionMaterial
-            backside
-            samples={8}
-            thickness={0.2}
-            chromaticAberration={0.1}
-            color={energy >= maxEnergy ? COLORS.green : COLORS.yellow}
-            transmission={0.7}
-          />
-        </mesh>
-        
-        {/* 能量指示点 */}
-        {Array.from({ length: maxEnergy }).map((_, i) => {
-          const angle = (i / maxEnergy) * Math.PI * 2 - Math.PI / 2
-          return (
-            <mesh 
-              key={i} 
-              position={[Math.cos(angle) * 0.8, Math.sin(angle) * 0.8, 0.15]}
-            >
-              <sphereGeometry args={[0.1, 16, 16]} />
-              <meshStandardMaterial 
-                color={i < energy ? COLORS.green : '#94a3b8'}
-                emissive={i < energy ? COLORS.green : '#64748b'}
-                emissiveIntensity={i < energy ? 1 : 0.2}
-              />
-            </mesh>
-          )
-        })}
-        
-        {/* 激活时的粒子 */}
-        {activated && (
-          <Sparkles count={80} scale={3} size={5} speed={1.5} color={COLORS.cyan} />
-        )}
-        
-        {/* 完成时的粒子 */}
-        {energy >= maxEnergy && (
-          <>
-            <Sparkles count={100} scale={4} size={6} speed={2} color={COLORS.green} />
-            <Sparkles count={60} scale={3} size={4} speed={1} color={COLORS.yellow} />
-          </>
-        )}
-      </group>
-    </Float>
-  )
+    
+    // 环境粒子（持续生成）
+    if (Math.random() < 0.08 && particlesRef.current.length < 50) {
+      const angle = Math.random() * Math.PI * 2
+      const dist = 120 + Math.random() * 80
+      particlesRef.current.push({
+        x: cx + Math.cos(angle) * dist,
+        y: platformY + Math.sin(angle) * dist,
+        vx: (Math.random() - 0.5) * 1,
+        vy: -Math.random() * 2 - 0.5,
+        size: Math.random() * 5 + 3,
+        color: ['#fbbf24', '#22c55e', '#facc15'][Math.floor(Math.random() * 3)],
+        alpha: 0.7,
+        life: 60,
+        type: 'sparkle'
+      })
+    }
+    
+    animationRef.current = requestAnimationFrame(draw)
+  }, [energy, flyingFormula, validationResult])
+  
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width * dpr
+      canvas.height = rect.height * dpr
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    
+    resize()
+    const initTimer = setTimeout(resize, 100)
+    window.addEventListener('resize', resize)
+    animationRef.current = requestAnimationFrame(draw)
+    
+    return () => {
+      clearTimeout(initTimer)
+      cancelAnimationFrame(animationRef.current)
+      window.removeEventListener('resize', resize)
+    }
+  }, [draw])
+  
+  return <MagicCanvas ref={canvasRef} />
 }
 
 // 动画
-const shake = keyframes`
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-`
-
-const glow = keyframes`
-  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
-`
-
 // 样式组件
 const Container = styled.div`
   width: 100%;
@@ -323,17 +721,6 @@ const CharacterGuideLeft = styled(motion.div)`
   gap: 10px;
 `
 
-const CharacterGuideRight = styled(motion.div)`
-  position: fixed;
-  bottom: 100px;
-  right: 20px;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-`
-
 const CharacterImg = styled.img`
   width: 140px;
   height: auto;
@@ -365,31 +752,32 @@ const CharacterSpeech = styled(motion.div)`
 
 const Header = styled(motion.div)`
   text-align: center;
-  padding: 12px 40px;
+  padding: 10px;
   z-index: 10;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
   margin: 0 auto;
   width: fit-content;
+  padding: 10px 30px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 `
 
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 `
 
 const HeaderIcon = styled.img`
-  width: 60px;
-  height: 60px;
+  width: 45px;
+  height: 45px;
   object-fit: contain;
   filter: drop-shadow(0 3px 10px rgba(251, 146, 60, 0.4));
 `
 
 const Title = styled.h1`
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   background: linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.gold} 50%, ${COLORS.success} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -398,97 +786,87 @@ const Title = styled.h1`
 
 const Subtitle = styled.p`
   color: ${COLORS.textSecondary};
-  font-size: 0.95rem;
-  margin: 4px 0 0;
+  font-size: 0.8rem;
+  margin: 2px 0 0;
 `
 
 const MainContent = styled.div`
   flex: 1;
   display: flex;
   gap: 20px;
-  padding: 10px 30px 110px;
+  padding: 15px 25px 90px;
   z-index: 10;
-  max-height: calc(100vh - 90px);
-  overflow: hidden;
 `
 
 const LeftSection = styled.div`
-  flex: 0 0 300px;
+  flex: 0 0 200px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 `
 
 const CenterSection = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+`
+
+const GlassContainer = styled.div`
+  position: relative;
+  width: 100%;
+  height: calc(100% - 20px);
+  max-height: calc(100vh - 220px);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(251, 146, 60, 0.15),
+    inset 0 0 30px rgba(255, 255, 255, 0.1);
 `
 
 const RightSection = styled.div`
-  flex: 0 0 200px;
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 `
 
 const Card = styled(motion.div)`
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 18px;
+  border-radius: 16px;
+  padding: 14px;
   box-shadow: 0 6px 25px rgba(251, 146, 60, 0.2);
 `
 
 const CardTitle = styled.h3`
   color: ${COLORS.orange};
-  font-size: 1.1rem;
-  margin: 0 0 12px;
+  font-size: 1rem;
+  margin: 0 0 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-`
-
-const FormulaRow = styled(motion.div)<{ highlighted?: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 15px;
-  border-radius: 12px;
-  background: ${props => props.highlighted ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'transparent'};
-  margin-bottom: 6px;
-`
-
-const FormulaNumber = styled.span<{ color?: string }>`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${props => props.color || COLORS.orange};
-  min-width: 32px;
-  text-align: center;
-`
-
-const FormulaOperator = styled.span`
-  font-size: 1.3rem;
-  color: ${COLORS.yellow};
-  font-weight: 700;
+  gap: 6px;
 `
 
 const FormulaInputRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 15px;
+  gap: 6px;
+  margin-bottom: 12px;
 `
 
 const NumberInputBox = styled.div<{ active?: boolean; hasError?: boolean }>`
-  width: 72px;
-  height: 60px;
+  width: 56px;
+  height: 48px;
   border: 3px solid ${props => props.hasError ? '#ef4444' : props.active ? COLORS.orange : '#fed7aa'};
-  border-radius: 15px;
-  font-size: 1.8rem;
+  border-radius: 10px;
+  font-size: 1.4rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -497,36 +875,31 @@ const NumberInputBox = styled.div<{ active?: boolean; hasError?: boolean }>`
   background: ${props => props.hasError ? '#fef2f2' : props.active ? '#fff7ed' : '#fffbeb'};
   cursor: pointer;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: ${props => props.active ? '0 0 20px rgba(251, 146, 60, 0.35)' : '0 2px 8px rgba(251, 146, 60, 0.1)'};
+  box-shadow: ${props => props.active ? '0 0 15px rgba(251, 146, 60, 0.35)' : '0 2px 6px rgba(251, 146, 60, 0.1)'};
   
   &:hover {
     border-color: ${COLORS.orange};
     transform: scale(1.03);
-    box-shadow: 0 4px 16px rgba(251, 146, 60, 0.25);
-  }
-  
-  &:active {
-    transform: scale(0.98);
   }
 `
 
 const NumberInputPlaceholder = styled.span`
   color: #fdba74;
-  font-size: 1.2rem;
+  font-size: 1rem;
 `
 
 const OperatorDisplay = styled.span`
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   color: ${COLORS.yellow};
   font-weight: 700;
 `
 
 const SubmitButton = styled(motion.button)<{ disabled?: boolean }>`
   width: 100%;
-  padding: 15px;
+  padding: 12px;
   border: none;
-  border-radius: 15px;
-  font-size: 1.2rem;
+  border-radius: 12px;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   background: ${props => props.disabled 
@@ -537,52 +910,29 @@ const SubmitButton = styled(motion.button)<{ disabled?: boolean }>`
     ? 'none' 
     : '0 4px 20px rgba(251, 146, 60, 0.4)'};
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   
   &:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(251, 146, 60, 0.45);
-    filter: brightness(1.05);
-  }
-  
-  &:active:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(251, 146, 60, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(251, 146, 60, 0.45);
   }
 `
 
-const ResultCard = styled(motion.div)<{ type: 'success' | 'error' }>`
-  padding: 15px;
-  border-radius: 15px;
-  margin-top: 15px;
-  background: ${props => props.type === 'success' 
-    ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' 
-    : 'linear-gradient(135deg, #fef2f2, #fecaca)'};
-  border: 2px solid ${props => props.type === 'success' ? COLORS.green : '#ef4444'};
-  animation: ${props => props.type === 'error' ? shake : 'none'} 0.5s ease;
-`
-
-const ResultText = styled.p`
-  font-size: 1rem;
-  margin: 0;
-  color: #374151;
-  line-height: 1.5;
-`
-
-const CanvasContainer = styled.div`
-  flex: 1;
-  min-height: 180px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  box-shadow: 0 6px 25px rgba(251, 146, 60, 0.2);
-  animation: ${glow} 3s ease-in-out infinite;
+const MagicCanvas = styled.canvas`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 `
 
 const KeypadCard = styled(motion.div)`
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 15px;
+  border-radius: 16px;
+  padding: 14px;
   box-shadow: 0 6px 25px rgba(251, 146, 60, 0.2);
   flex: 1;
 `
@@ -601,10 +951,10 @@ const KeypadGrid = styled.div`
 `
 
 const KeypadButton = styled(motion.button)<{ variant?: 'number' | 'action' }>`
-  height: 48px;
+  height: 44px;
   border: none;
-  border-radius: 12px;
-  font-size: ${props => props.variant === 'action' ? '0.9rem' : '1.4rem'};
+  border-radius: 10px;
+  font-size: ${props => props.variant === 'action' ? '0.85rem' : '1.3rem'};
   font-weight: 700;
   cursor: pointer;
   background: ${props => props.variant === 'action' 
@@ -617,19 +967,15 @@ const KeypadButton = styled(motion.button)<{ variant?: 'number' | 'action' }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(251, 146, 60, 0.2);
-    background: ${props => props.variant === 'action'
-      ? 'linear-gradient(135deg, #fdba74, #fb923c)'
-      : 'linear-gradient(135deg, #ffedd5, #fed7aa)'};
   }
   
   &:active {
     transform: translateY(0) scale(0.97);
-    box-shadow: 0 1px 4px rgba(251, 146, 60, 0.15);
   }
 `
 
 const ActiveInputHint = styled.div<{ active: boolean }>`
-  margin-top: 12px;
+  margin-top: 10px;
   padding: 8px;
   background: ${props => props.active ? '#fff7ed' : '#f1f5f9'};
   border-radius: 10px;
@@ -638,72 +984,116 @@ const ActiveInputHint = styled.div<{ active: boolean }>`
   color: ${props => props.active ? COLORS.orange : '#94a3b8'};
 `
 
-const FoundList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-`
-
-const FoundItem = styled(motion.div)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px;
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: ${COLORS.green};
-`
-
 const TipBox = styled.div`
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 10px;
+  padding: 10px;
   background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-  border-radius: 12px;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
   color: #0369a1;
   text-align: center;
 `
 
-const SuccessBanner = styled(motion.div)`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 40px 60px;
-  border-radius: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  z-index: 100;
+const EnergyDisplay = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  margin: 12px 0;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 16px;
+  border: 3px solid #fbbf24;
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
 `
 
-// 主组件
-interface Props {
-  onComplete?: () => void
-}
+const EnergyNumber = styled.div`
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, ${COLORS.orange}, ${COLORS.gold});
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  text-shadow: 0 4px 15px rgba(251, 146, 60, 0.3);
+`
 
-export default function MagicArrayStage({ onComplete }: Props) {
+const EnergyLabel = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${COLORS.orange};
+  margin-top: 4px;
+`
+
+// const ResultCard = styled.div<{ valid: boolean }>`
+//   margin-top: 12px;
+//   padding: 16px;
+//   border-radius: 14px;
+//   background: ${props => props.valid 
+//     ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' 
+//     : 'linear-gradient(135deg, #fef2f2, #fecaca)'};
+//   border: 2px solid ${props => props.valid ? '#22c55e' : '#ef4444'};
+//   box-shadow: ${props => props.valid 
+//     ? '0 6px 20px rgba(34, 197, 94, 0.25)' 
+//     : '0 6px 20px rgba(239, 68, 68, 0.25)'};
+//   text-align: center;
+// `
+
+// const ResultIcon = styled.div<{ valid: boolean }>`
+//   width: 50px;
+//   height: 50px;
+//   margin: 0 auto 10px;
+//   border-radius: 50%;
+//   background: ${props => props.valid 
+//     ? 'linear-gradient(135deg, #22c55e, #16a34a)' 
+//     : 'linear-gradient(135deg, #ef4444, #dc2626)'};
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   font-size: 1.8rem;
+//   color: white;
+//   box-shadow: ${props => props.valid 
+//     ? '0 4px 15px rgba(34, 197, 94, 0.4)' 
+//     : '0 4px 15px rgba(239, 68, 68, 0.4)'};
+// `
+
+// const ResultMessage = styled.div`
+//   font-size: 1.1rem;
+//   font-weight: 700;
+//   margin-bottom: 6px;
+// `
+
+// const ResultHint = styled.div`
+//   font-size: 0.85rem;
+//   color: #64748b;
+//   line-height: 1.4;
+// `
+
+// const SuccessBanner = styled(motion.div)`
+//   position: fixed;
+//   top: 50%;
+//   left: 50%;
+//   transform: translate(-50%, -50%);
+//   background: white;
+//   padding: 40px 60px;
+//   border-radius: 30px;
+//   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+//   text-align: center;
+//   z-index: 100;
+// `
+
+export default function MagicArrayStage() {
   const [leftNum, setLeftNum] = useState('')
   const [rightNum, setRightNum] = useState('')
   const [sumNum, setSumNum] = useState('')
   const [activeInput, setActiveInput] = useState<'left' | 'right' | 'sum' | null>('left')
-  const [result, setResult] = useState<{ valid: boolean; message: string } | null>(null)
   const [foundFormulas, setFoundFormulas] = useState<Array<{ left: number; right: number }>>([])
-  const [isActivated, setIsActivated] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [highlightedExample, setHighlightedExample] = useState(0)
+  // const [showSuccess, setShowSuccess] = useState(false)
   
-  // 范例高亮轮播
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setHighlightedExample(prev => (prev + 1) % EXAMPLE_FORMULAS.length)
-    }, 2500)
-    return () => clearInterval(timer)
-  }, [])
+  // 动画状态
+  const [flyingFormula, setFlyingFormula] = useState<FlyingFormula | null>(null)
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
+  const flyingAnimRef = useRef<number>(0)
+  const validationAnimRef = useRef<number>(0)
   
   // 键盘输入处理
   const handleKeypadClick = (value: string) => {
@@ -733,9 +1123,40 @@ export default function MagicArrayStage({ onComplete }: Props) {
         setter(currentValue + value)
       }
     }
-    
-    // 清除之前的结果
-    setResult(null)
+  }
+  
+  // 飞入动画
+  const startFlyingAnimation = (left: string, right: string, sum: string, onComplete: () => void) => {
+    let progress = 0
+    const animate = () => {
+      progress += 0.02
+      if (progress >= 1) {
+        setFlyingFormula(null)
+        onComplete()
+        return
+      }
+      setFlyingFormula({ left, right, sum, progress, startX: 280, startY: 150 })
+      flyingAnimRef.current = requestAnimationFrame(animate)
+    }
+    setFlyingFormula({ left, right, sum, progress: 0, startX: 280, startY: 150 })
+    flyingAnimRef.current = requestAnimationFrame(animate)
+  }
+  
+  // 验证结果动画 - 不自动消失，等待点击“再试一次”
+  const startValidationAnimation = (valid: boolean, message: string) => {
+    let progress = 0
+    const animate = () => {
+      progress += 0.025
+      if (progress >= 1) {
+        // 动画完成后保持显示，不自动消失
+        setValidationResult({ valid, message, progress: 1, scale: 1 })
+        return
+      }
+      setValidationResult({ valid, message, progress, scale: 0.3 + progress * 0.7 })
+      validationAnimRef.current = requestAnimationFrame(animate)
+    }
+    setValidationResult({ valid, message, progress: 0, scale: 0.3 })
+    validationAnimRef.current = requestAnimationFrame(animate)
   }
   
   // 提交验证
@@ -745,15 +1166,15 @@ export default function MagicArrayStage({ onComplete }: Props) {
     const sum = parseInt(sumNum)
     
     if (isNaN(left) || isNaN(right) || isNaN(sum)) {
-      setResult({ valid: false, message: '请填写完整的算式！' })
+      startValidationAnimation(false, '请填写完整的算式！')
       return
     }
     
-    setIsActivated(true)
-    
-    setTimeout(() => {
+    // 开始飞入动画
+    startFlyingAnimation(leftNum, rightNum, sumNum, () => {
+      // 飞入完成后进行验证
       const validation = validateFormula(left, right, sum)
-      setResult(validation)
+      startValidationAnimation(validation.valid, validation.message)
       
       if (validation.valid) {
         // 检查是否已经找到过这个算式
@@ -766,32 +1187,34 @@ export default function MagicArrayStage({ onComplete }: Props) {
           setFoundFormulas(newFoundFormulas)
           
           // 庆祝效果
-          confetti({
-            particleCount: 80,
-            spread: 60,
-            origin: { y: 0.6 },
-            colors: [COLORS.green, COLORS.yellow, COLORS.orange]
-          })
+          setTimeout(() => {
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: [COLORS.green, COLORS.yellow, COLORS.orange]
+            })
+          }, 500)
           
-          // 检查是否完成（找到2个不同的算式）
+          // 检查是否完成
           if (newFoundFormulas.length >= 2) {
             setTimeout(() => {
-              setShowSuccess(true)
+              // setShowSuccess(true)
               confetti({
                 particleCount: 150,
                 spread: 100,
                 origin: { y: 0.5 },
                 colors: [COLORS.green, COLORS.yellow, COLORS.orange, COLORS.cyan]
               })
-            }, 1000)
+            }, 2000)
           }
         } else {
-          setResult({ valid: true, message: '✅ 正确！但这个算式你已经找到过了，试试其他的吧！' })
+          setTimeout(() => {
+            startValidationAnimation(true, '✅ 正确！但这个算式已经找到过了，试试其他的吧！')
+          }, 1800)
         }
       }
-      
-      setIsActivated(false)
-    }, 1200)
+    })
   }
   
   // 重置
@@ -799,9 +1222,17 @@ export default function MagicArrayStage({ onComplete }: Props) {
     setLeftNum('')
     setRightNum('')
     setSumNum('')
-    setResult(null)
     setActiveInput('left')
+    setValidationResult(null)
   }
+  
+  // 清理动画
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(flyingAnimRef.current)
+      cancelAnimationFrame(validationAnimRef.current)
+    }
+  }, [])
   
   return (
     <Container>
@@ -820,18 +1251,6 @@ export default function MagicArrayStage({ onComplete }: Props) {
         <CharacterImg src={characters.judy} alt="Judy" />
       </CharacterGuideLeft>
       
-      {/* 尼克角色引导 */}
-      <CharacterGuideRight
-        initial={{ x: 150, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.7, type: 'spring' }}
-      >
-        <CharacterSpeech>
-          🦊 提示：个位+个位=4！
-        </CharacterSpeech>
-        <CharacterImg src={characters.nick} alt="Nick" />
-      </CharacterGuideRight>
-      
       <Header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -847,95 +1266,58 @@ export default function MagicArrayStage({ onComplete }: Props) {
       </Header>
       
       <MainContent>
-        {/* 左侧 - 范例和提示 */}
+        {/* 左侧 - 已找到的算式和提示 */}
         <LeftSection>
+          {/* 已找到的算式 */}
           <Card
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <CardTitle>
-              <span>📚</span> 范例板书
+              <span>✨</span> 魔法能量
             </CardTitle>
             
-            {EXAMPLE_FORMULAS.map((formula, index) => (
-              <FormulaRow 
-                key={index}
-                highlighted={index === highlightedExample}
-                animate={{ 
-                  scale: index === highlightedExample ? 1.03 : 1,
-                  backgroundColor: index === highlightedExample ? '#fef3c7' : 'transparent'
-                }}
-              >
-                <FormulaNumber color={COLORS.orange}>{formula.left}</FormulaNumber>
-                <FormulaOperator>+</FormulaOperator>
-                <FormulaNumber color={COLORS.yellow}>{formula.right}</FormulaNumber>
-                <FormulaOperator>=</FormulaOperator>
-                <FormulaNumber color={COLORS.green}>{formula.sum}</FormulaNumber>
-              </FormulaRow>
-            ))}
+            {/* 能量分数显示 */}
+            <EnergyDisplay>
+              <EnergyNumber>{foundFormulas.length * 10}</EnergyNumber>
+              <EnergyLabel>能量值</EnergyLabel>
+            </EnergyDisplay>
             
             <TipBox>
-              💡 <strong>规律发现</strong><br/>
-              个位相加得 <strong>4</strong>，十位相加得 <strong>4</strong>！
+              💡 <strong>规律提示</strong><br/>
+              个位+个位=<strong>4</strong>，十位+十位=<strong>4</strong>！
             </TipBox>
           </Card>
-          
-          {/* 已找到的算式 */}
+        </LeftSection>
+        
+        {/* 中间 - 魔法台 Canvas */}
+        <CenterSection>
+          <GlassContainer>
+            <MagicPlatformCanvas
+              energy={foundFormulas.length}
+              flyingFormula={flyingFormula}
+              validationResult={validationResult}
+              onValidationComplete={() => {}}
+            />
+          </GlassContainer>
+        </CenterSection>
+        
+        {/* 右侧 - 输入框、按钮和键盘 */}
+        <RightSection>
+          {/* 输入框卡片 */}
           <Card
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <CardTitle>
-              <span>✅</span> 已找到 ({foundFormulas.length}/2)
-            </CardTitle>
-            
-            {foundFormulas.length === 0 ? (
-              <p style={{ color: '#9ca3af', textAlign: 'center', margin: '10px 0' }}>
-                还没有找到哦，加油！
-              </p>
-            ) : (
-              <FoundList>
-                {foundFormulas.map((f, i) => (
-                  <FoundItem
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    ✨ {f.left} + {f.right} = 44
-                  </FoundItem>
-                ))}
-              </FoundList>
-            )}
-          </Card>
-        </LeftSection>
-        
-        {/* 中间 - 3D魔法阵和输入 */}
-        <CenterSection>
-          <CanvasContainer>
-            <Canvas camera={{ position: [0, 0, 4], fov: 50 }}>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 5, 5]} intensity={1} />
-              <pointLight position={[-3, 3, 3]} color={COLORS.orange} intensity={0.5} />
-              <Environment preset="sunset" />
-              <MagicArray3D activated={isActivated} energy={foundFormulas.length} />
-            </Canvas>
-          </CanvasContainer>
-          
-          <Card
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <CardTitle>
-              <span>✏️</span> 写出和为44的反转数对
+              <span>✏️</span> 输入算式
             </CardTitle>
             
             <FormulaInputRow>
               <NumberInputBox
                 active={activeInput === 'left'}
-                hasError={!!(result && !result.valid)}
                 onClick={() => setActiveInput('left')}
               >
                 {leftNum || <NumberInputPlaceholder>?</NumberInputPlaceholder>}
@@ -943,7 +1325,6 @@ export default function MagicArrayStage({ onComplete }: Props) {
               <OperatorDisplay>+</OperatorDisplay>
               <NumberInputBox
                 active={activeInput === 'right'}
-                hasError={!!(result && !result.valid)}
                 onClick={() => setActiveInput('right')}
               >
                 {rightNum || <NumberInputPlaceholder>?</NumberInputPlaceholder>}
@@ -951,7 +1332,6 @@ export default function MagicArrayStage({ onComplete }: Props) {
               <OperatorDisplay>=</OperatorDisplay>
               <NumberInputBox
                 active={activeInput === 'sum'}
-                hasError={!!(result && !result.valid)}
                 onClick={() => setActiveInput('sum')}
               >
                 {sumNum || <NumberInputPlaceholder>?</NumberInputPlaceholder>}
@@ -959,55 +1339,20 @@ export default function MagicArrayStage({ onComplete }: Props) {
             </FormulaInputRow>
             
             <SubmitButton
-              onClick={handleSubmit}
-              disabled={isActivated || !leftNum || !rightNum || !sumNum}
-              whileHover={{ scale: 1.02, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-              whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
+              onClick={validationResult ? handleReset : handleSubmit}
+              disabled={!validationResult && (!leftNum || !rightNum || !sumNum || !!flyingFormula)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
             >
-              {isActivated ? '🔮 魔法阵验证中...' : '⚡ 激活魔法阵'}
+              {flyingFormula ? '🔮 验证中...' : validationResult ? '🔄 再试一次' : '⚡ 闪电验证'}
             </SubmitButton>
-            
-            <AnimatePresence>
-              {result && (
-                <ResultCard
-                  type={result.valid ? 'success' : 'error'}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <ResultText>{result.message}</ResultText>
-                  {!result.valid && (
-                    <motion.button
-                      style={{
-                        marginTop: '10px',
-                        padding: '8px 20px',
-                        border: 'none',
-                        borderRadius: '10px',
-                        background: COLORS.orange,
-                        color: 'white',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                      onClick={handleReset}
-                      whileHover={{ scale: 1.03, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-                      whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
-                    >
-                      🔄 再试一次
-                    </motion.button>
-                  )}
-                </ResultCard>
-              )}
-            </AnimatePresence>
           </Card>
-        </CenterSection>
-        
-        {/* 右侧 - 数字键盘 */}
-        <RightSection>
+          
+          {/* 数字键盘 */}
           <KeypadCard
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
           >
             <KeypadTitle>⌨️ 点击输入</KeypadTitle>
             <KeypadGrid>
@@ -1015,8 +1360,8 @@ export default function MagicArrayStage({ onComplete }: Props) {
                 <KeypadButton
                   key={num}
                   onClick={() => handleKeypadClick(String(num))}
-                  whileHover={{ y: -2, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-                  whileTap={{ scale: 0.95, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   {num}
                 </KeypadButton>
@@ -1024,23 +1369,23 @@ export default function MagicArrayStage({ onComplete }: Props) {
               <KeypadButton
                 variant="action"
                 onClick={() => handleKeypadClick('clear')}
-                whileHover={{ y: -2, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-                whileTap={{ scale: 0.95, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
                 C
               </KeypadButton>
               <KeypadButton
                 onClick={() => handleKeypadClick('0')}
-                whileHover={{ y: -2, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-                whileTap={{ scale: 0.95, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
                 0
               </KeypadButton>
               <KeypadButton
                 variant="action"
                 onClick={() => handleKeypadClick('del')}
-                whileHover={{ y: -2, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-                whileTap={{ scale: 0.95, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
                 ⌫
               </KeypadButton>
@@ -1057,7 +1402,7 @@ export default function MagicArrayStage({ onComplete }: Props) {
       </MainContent>
       
       {/* 成功弹窗 */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {showSuccess && (
           <motion.div
             style={{
@@ -1098,36 +1443,32 @@ export default function MagicArrayStage({ onComplete }: Props) {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                广场防护罩激活成功！
+                恭喜通关！
               </h2>
-              <p style={{ color: '#6b7280', margin: '0 0 20px' }}>
-                你和朱迪、尼克发现了：个位相加得4，十位相加得4！
+              <p style={{ color: '#666', margin: '0 0 20px' }}>
+                你成功找到了所有和为44的反转数对！
               </p>
               <motion.button
                 style={{
                   padding: '12px 30px',
-                  border: 'none',
-                  borderRadius: 20,
                   fontSize: '1.1rem',
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.cyan})`,
                   color: 'white',
-                  boxShadow: '0 4px 20px rgba(34, 197, 94, 0.4)'
+                  background: `linear-gradient(135deg, ${COLORS.orange}, ${COLORS.yellow})`,
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer'
                 }}
-                onClick={() => {
-                  setShowSuccess(false)
-                  onComplete?.()
-                }}
+                onClick={onComplete}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                🚀 闯关成功！
+                下一关 →
               </motion.button>
             </SuccessBanner>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </Container>
   )
 }

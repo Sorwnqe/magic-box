@@ -5,7 +5,6 @@ import {
   Stars, 
   Text,
   MeshTransmissionMaterial,
-  Environment,
   Sparkles
 } from '@react-three/drei'
 import { motion } from 'framer-motion'
@@ -125,7 +124,7 @@ function Background() {
   return (
     <>
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      <Environment preset="night" />
+      {/* Environment removed - using local lights only */}
     </>
   )
 }

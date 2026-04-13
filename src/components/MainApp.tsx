@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { 
-  Float, 
-  Environment,
+import {
+  Float,
   Sparkles,
   Text,
   OrbitControls
@@ -45,18 +44,18 @@ class CanvasErrorBoundary extends React.Component<
 }
 
 // 3D 魔盒组件 - 简化版（兼容性更好）
-function MagicBox3D({ 
-  isSpinning, 
-  isOpening, 
-  displayNumber 
-}: { 
+function MagicBox3D({
+  isSpinning,
+  isOpening,
+  displayNumber
+}: {
   isSpinning: boolean
   isOpening: boolean
-  displayNumber: string 
+  displayNumber: string
 }) {
   const meshRef = useRef<THREE.Group>(null)
   const boxRef = useRef<THREE.Mesh>(null)
-  
+
   useFrame((state) => {
     if (meshRef.current) {
       if (isSpinning) {
@@ -84,7 +83,7 @@ function MagicBox3D({
           <torusGeometry args={[2.2, 0.02, 16, 100]} />
           <meshBasicMaterial color="#ff00ff" transparent opacity={0.4} />
         </mesh>
-        
+
         {/* 魔盒主体 - 使用兼容性更好的材质 */}
         <mesh ref={boxRef}>
           <boxGeometry args={[1.5, 1.5, 1.5]} />
@@ -98,7 +97,7 @@ function MagicBox3D({
             emissiveIntensity={0.3}
           />
         </mesh>
-        
+
         {/* 魔盒边缘发光效果 */}
         <mesh>
           <boxGeometry args={[1.55, 1.55, 1.55]} />
@@ -179,13 +178,13 @@ function ChatMessage({ message }: { message: Message }) {
 }
 
 // 数字展示卡片
-function NumberCard({ 
-  label, 
-  number, 
-  tens, 
-  ones, 
+function NumberCard({
+  label,
+  number,
+  tens,
+  ones,
   isResult = false,
-  visible = true 
+  visible = true
 }: {
   label: string
   number: string
@@ -197,8 +196,8 @@ function NumberCard({
   return (
     <CardWrapper
       initial={{ opacity: 0, scale: 0.8, rotateY: 180 }}
-      animate={{ 
-        opacity: visible ? 1 : 0, 
+      animate={{
+        opacity: visible ? 1 : 0,
         scale: visible ? 1 : 0.8,
         rotateY: visible ? 0 : 180
       }}
@@ -252,7 +251,7 @@ export default function MainApp() {
     setMessages(prev => [...prev, { id: typingId, type: 'bot', content: '', isTyping: true }])
 
     setTimeout(() => {
-      setMessages(prev => 
+      setMessages(prev =>
         prev.map(m => m.id === typingId ? { ...m, content, isTyping: false } : m)
       )
     }, delay)
@@ -278,15 +277,15 @@ export default function MainApp() {
     }
 
     // 添加用户消息
-    setMessages(prev => [...prev, { 
-      id: Date.now(), 
-      type: 'user', 
-      content: `我输入了 ${validation.number}` 
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      type: 'user',
+      content: `我输入了 ${validation.number}`
     }])
 
     // 处理数字
     const result = magicBox.processNumber(validation.number!)
-    
+
     // 更新显示
     setDisplayNumber(result.input.toString())
     setCurrentInput({
@@ -308,7 +307,7 @@ export default function MainApp() {
 
   const handleReveal = () => {
     const result = magicBox.openBox()
-    
+
     if (!result.success) {
       addBotMessage(result.message!)
       return
@@ -316,7 +315,7 @@ export default function MainApp() {
 
     // 触发开箱动画
     setIsOpening(true)
-    
+
     setTimeout(() => {
       setIsOpening(false)
       setDisplayNumber(result.output!.toString())
@@ -326,7 +325,7 @@ export default function MainApp() {
         ones: result.outputOnes!.toString(),
         visible: true
       })
-      
+
       addBotMessage(result.message!)
       setTimeout(() => {
         addBotMessage(result.encouragement!)
@@ -337,17 +336,17 @@ export default function MainApp() {
 
   const handlePattern = () => {
     const result = magicBox.revealPattern()
-    
+
     if (!result.success) {
       addBotMessage(result.message!)
       return
     }
 
     setIsOpening(true)
-    
+
     setTimeout(() => {
       setIsOpening(false)
-      
+
       if (result.results && result.results.length > 0) {
         const last = result.results[result.results.length - 1]
         setDisplayNumber(last.output.toString())
@@ -358,7 +357,7 @@ export default function MainApp() {
           visible: true
         })
       }
-      
+
       addBotMessage(result.message!)
       setTimeout(() => {
         addBotMessage(result.explanation!.join('<br/>'))
@@ -396,9 +395,9 @@ export default function MainApp() {
                   <ambientLight intensity={0.5} />
                   <pointLight position={[10, 10, 10]} intensity={1} color="#00d4ff" />
                   <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff00ff" />
-                  <Environment preset="night" />
-                  <MagicBox3D 
-                    isSpinning={isSpinning} 
+                  {/* Environment removed - using local lights only */}
+                  <MagicBox3D
+                    isSpinning={isSpinning}
                     isOpening={isOpening}
                     displayNumber={displayNumber}
                   />
@@ -410,7 +409,7 @@ export default function MainApp() {
 
           {/* 数字卡片 */}
           <CardsContainer>
-            <NumberCard 
+            <NumberCard
               label="输入的数"
               number={currentInput.number}
               tens={currentInput.tens}
@@ -418,8 +417,8 @@ export default function MainApp() {
             />
             <SwapArrow>
               <svg viewBox="0 0 100 40" width="60" height="24">
-                <path d="M10,20 Q50,5 90,20" fill="none" stroke="url(#grad)" strokeWidth="2"/>
-                <path d="M10,20 Q50,35 90,20" fill="none" stroke="url(#grad)" strokeWidth="2"/>
+                <path d="M10,20 Q50,5 90,20" fill="none" stroke="url(#grad)" strokeWidth="2" />
+                <path d="M10,20 Q50,35 90,20" fill="none" stroke="url(#grad)" strokeWidth="2" />
                 <defs>
                   <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" style={{ stopColor: '#ff00ff' }} />
@@ -429,7 +428,7 @@ export default function MainApp() {
               </svg>
               <span>交换</span>
             </SwapArrow>
-            <NumberCard 
+            <NumberCard
               label="魔法结果"
               number={currentOutput.number}
               tens={currentOutput.tens}
@@ -447,13 +446,13 @@ export default function MainApp() {
             <InputDisplayNumber>{inputValue || '--'}</InputDisplayNumber>
             <InputDisplayLabel>输入两位数</InputDisplayLabel>
           </InputDisplay>
-          
+
           {/* 数字键盘 */}
           <KeypadContainer>
             <KeypadGrid>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <KeypadButton 
-                  key={num} 
+                <KeypadButton
+                  key={num}
                   onClick={() => inputValue.length < 2 && setInputValue(inputValue + num)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -461,7 +460,7 @@ export default function MainApp() {
                   {num}
                 </KeypadButton>
               ))}
-              <KeypadButton 
+              <KeypadButton
                 onClick={() => setInputValue('')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -469,14 +468,14 @@ export default function MainApp() {
               >
                 清除
               </KeypadButton>
-              <KeypadButton 
+              <KeypadButton
                 onClick={() => inputValue.length < 2 && setInputValue(inputValue + '0')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 0
               </KeypadButton>
-              <KeypadButton 
+              <KeypadButton
                 onClick={() => setInputValue(inputValue.slice(0, -1))}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -486,7 +485,7 @@ export default function MainApp() {
               </KeypadButton>
             </KeypadGrid>
           </KeypadContainer>
-          
+
           {/* 操作按钮 */}
           <ButtonGroup>
             <ActionButton color="primary" onClick={handleSubmit}>
@@ -569,72 +568,6 @@ const BackgroundImage = styled.div`
     position: absolute;
     inset: 0;
     background: linear-gradient(135deg, rgba(30, 64, 175, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
-  }
-`
-
-const Navbar = styled.nav`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background: rgba(30, 64, 175, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 2px solid ${COLORS.primaryLight};
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 100;
-`
-
-const NavLogo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`
-
-const LogoBoxContainer = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: rgba(124, 58, 237, 0.1);
-  border: 1px solid rgba(124, 58, 237, 0.3);
-`
-
-const LogoText = styled.span`
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(135deg, ${COLORS.gold} 0%, #fff 50%, ${COLORS.gold} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`
-
-const NavTabs = styled.div`
-  display: flex;
-  gap: 10px;
-`
-
-const NavTab = styled.button<{ active?: boolean; disabled?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: ${props => props.active ? 'rgba(255, 255, 255, 0.2)' : 'transparent'};
-  border: 1px solid ${props => props.active ? 'white' : 'rgba(255,255,255,0.3)'};
-  border-radius: 25px;
-  color: ${props => props.disabled ? 'rgba(255,255,255,0.4)' : 'white'};
-  font-family: var(--font-body);
-  font-size: 14px;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  transition: all 0.3s ease;
-  
-  &:hover:not(:disabled) {
-    border-color: white;
-    background: rgba(255, 255, 255, 0.15);
   }
 `
 
@@ -743,8 +676,8 @@ const CardNumber = styled.div<{ isResult?: boolean }>`
   font-family: var(--font-display);
   font-size: 28px;
   font-weight: 700;
-  background: ${props => props.isResult 
-    ? `linear-gradient(135deg, ${COLORS.success}, ${COLORS.primaryLight})` 
+  background: ${props => props.isResult
+    ? `linear-gradient(135deg, ${COLORS.success}, ${COLORS.primaryLight})`
     : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple})`};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -880,7 +813,7 @@ const ChatMessages = styled.div`
   gap: 10px;
 `
 
-const MessageWrapper = styled(motion.div)<{ isUser: boolean }>`
+const MessageWrapper = styled(motion.div) <{ isUser: boolean }>`
   display: flex;
   gap: 12px;
   flex-direction: ${props => props.isUser ? 'row-reverse' : 'row'};
@@ -911,8 +844,8 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
   max-width: 85%;
   padding: 10px 14px;
   border-radius: ${props => props.isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};
-  background: ${props => props.isUser 
-    ? `linear-gradient(135deg, ${COLORS.primaryLight}, ${COLORS.purple})` 
+  background: ${props => props.isUser
+    ? `linear-gradient(135deg, ${COLORS.primaryLight}, ${COLORS.purple})`
     : '#f0f9ff'};
   border: 1px solid ${props => props.isUser ? COLORS.primary : '#e0f2fe'};
   color: ${props => props.isUser ? 'white' : COLORS.textPrimary};
@@ -982,13 +915,13 @@ const ActionButton = styled.button<{ color: string }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px ${props => {
-      switch (props.color) {
-        case 'primary': return 'rgba(30, 64, 175, 0.4)'
-        case 'secondary': return 'rgba(139, 92, 246, 0.4)'
-        case 'accent': return 'rgba(34, 197, 94, 0.4)'
-        default: return 'rgba(0,0,0,0.15)'
-      }
-    }};
+    switch (props.color) {
+      case 'primary': return 'rgba(30, 64, 175, 0.4)'
+      case 'secondary': return 'rgba(139, 92, 246, 0.4)'
+      case 'accent': return 'rgba(34, 197, 94, 0.4)'
+      default: return 'rgba(0,0,0,0.15)'
+    }
+  }};
   }
   
   span {
