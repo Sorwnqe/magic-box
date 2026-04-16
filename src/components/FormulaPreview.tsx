@@ -110,7 +110,7 @@ const FormulaRow = styled(motion.div)`
   margin: 15px 0;
 `
 
-const FormulaNumber = styled(motion.span)<{ color?: string }>`
+const FormulaNumber = styled(motion.span) <{ color?: string }>`
   font-size: 3.5rem;
   font-weight: 800;
   color: ${props => props.color || COLORS.indigo};
@@ -222,14 +222,14 @@ const BackButton = styled(motion.button)`
   }
 `
 
-const ActionButton = styled(motion.button)<{ variant?: 'primary' | 'success' }>`
+const ActionButton = styled(motion.button) <{ variant?: 'primary' | 'success' }>`
   padding: 18px 50px;
   border: none;
   border-radius: 30px;
   font-size: 1.3rem;
   font-weight: 700;
   cursor: pointer;
-  background: ${props => props.variant === 'success' 
+  background: ${props => props.variant === 'success'
     ? `linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.cyan} 100%)`
     : `linear-gradient(135deg, ${COLORS.orange} 0%, ${COLORS.yellow} 100%)`};
   color: white;
@@ -241,8 +241,8 @@ const ActionButton = styled(motion.button)<{ variant?: 'primary' | 'success' }>`
   &:hover {
     transform: translateY(-3px);
     box-shadow: ${props => props.variant === 'success'
-      ? '0 12px 40px rgba(34, 197, 94, 0.6)'
-      : '0 12px 40px rgba(251, 146, 60, 0.6)'};
+    ? '0 12px 40px rgba(34, 197, 94, 0.6)'
+    : '0 12px 40px rgba(251, 146, 60, 0.6)'};
   }
 `
 
@@ -275,12 +275,13 @@ interface FormulaPreviewProps {
 export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewProps) {
   const [showAnswers, setShowAnswers] = useState(false)
   const [answersRevealed, setAnswersRevealed] = useState([false, false])
-  
+
   const formulas = [
     { left: 12, right: 21, sum: 33 },
-    { left: 23, right: 32, sum: 55 }
+    { left: 23, right: 32, sum: 55 },
+    { left: 34, right: 43, sum: 77 }
   ]
-  
+
   // 生成随机闪光点
   const sparkles = Array.from({ length: 15 }, (_, i) => ({
     id: i,
@@ -288,13 +289,13 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
     y: Math.random() * 100,
     delay: Math.random() * 2
   }))
-  
+
   const handleShowAnswers = () => {
     setShowAnswers(true)
-    
+
     // 第一个答案弹出
     setTimeout(() => {
-      setAnswersRevealed([true, false])
+      setAnswersRevealed([true, false, false])
       confetti({
         particleCount: 50,
         spread: 60,
@@ -302,10 +303,10 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
         colors: ['#22c55e', '#4ade80', '#fbbf24']
       })
     }, 300)
-    
+
     // 第二个答案弹出
     setTimeout(() => {
-      setAnswersRevealed([true, true])
+      setAnswersRevealed([true, true, false])
       confetti({
         particleCount: 80,
         spread: 80,
@@ -313,18 +314,29 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
         colors: ['#22c55e', '#4ade80', '#fbbf24', '#8b5cf6']
       })
     }, 800)
+
+    // 第二个答案弹出
+    setTimeout(() => {
+      setAnswersRevealed([true, true, true])
+      confetti({
+        particleCount: 80,
+        spread: 80,
+        origin: { x: 0.5, y: 0.5 },
+        colors: ['#22c55e', '#4ade80', '#fbbf24', '#8b5cf6']
+      })
+    }, 1300)
   }
-  
+
   return (
     <Container>
       <BackgroundImage />
-      
+
       <Sparkles>
         {sparkles.map(s => (
           <Sparkle key={s.id} x={s.x} y={s.y} delay={s.delay} />
         ))}
       </Sparkles>
-      
+
       {/* 朱迪 - 左侧 */}
       <CharacterLeft
         initial={{ x: -200, opacity: 0 }}
@@ -340,7 +352,7 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
         </SpeechBubble>
         <CharacterImg src={characters.judy} alt="Judy" />
       </CharacterLeft>
-      
+
       {/* 尼克 - 右侧 */}
       <CharacterRight
         initial={{ x: 200, opacity: 0 }}
@@ -356,7 +368,7 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
         </SpeechBubble>
         <CharacterImg src={characters.nick} alt="Nick" />
       </CharacterRight>
-      
+
       <ContentWrapper
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -370,7 +382,7 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
           <Title>✨ 反转数的秘密 ✨</Title>
           <Subtitle>观察下面的算式，准备进入第二关！</Subtitle>
         </TitleSection>
-        
+
         <FormulaCard
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -383,31 +395,31 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 + index * 0.2 }}
             >
-              <FormulaNumber 
+              <FormulaNumber
                 color={COLORS.purple}
                 style={{ animationDelay: `${index * 0.3}s` }}
               >
                 {formula.left}
               </FormulaNumber>
               <FormulaOperator>+</FormulaOperator>
-              <FormulaNumber 
+              <FormulaNumber
                 color={COLORS.indigo}
                 style={{ animationDelay: `${index * 0.3 + 0.15}s` }}
               >
                 {formula.right}
               </FormulaNumber>
               <FormulaOperator>=</FormulaOperator>
-              
+
               <AnimatePresence mode="wait">
                 {answersRevealed[index] ? (
                   <AnswerNumber
                     key="answer"
                     initial={{ scale: 0, rotate: -180, opacity: 0 }}
                     animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                    transition={{ 
-                      type: 'spring', 
-                      stiffness: 200, 
-                      damping: 15 
+                    transition={{
+                      type: 'spring',
+                      stiffness: 200,
+                      damping: 15
                     }}
                   >
                     {formula.sum}
@@ -417,7 +429,7 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
                     key="question"
                     initial={{ opacity: 1 }}
                     exit={{ scale: 0.5, opacity: 0 }}
-                    animate={{ 
+                    animate={{
                       scale: [1, 1.1, 1],
                       transition: { repeat: Infinity, duration: 1.5 }
                     }}
@@ -428,9 +440,9 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
               </AnimatePresence>
             </FormulaRow>
           ))}
-          
+
           <Divider />
-          
+
           {/* <AnimatePresence mode="wait">
             {showAnswers && answersRevealed[1] ? (
               <HintText
@@ -453,7 +465,7 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
             )}
           </AnimatePresence> */}
         </FormulaCard>
-        
+
         <AnimatePresence mode="wait">
           {showAnswers && answersRevealed[1] ? (
             <ButtonGroup>

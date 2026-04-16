@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { preloadSounds } from './hooks/useSound'
+import WaitingScreen from './components/WaitingScreen'
 import MagicIntro from './components/MagicIntro'
 import MagicMainApp from './components/MagicMainApp'
 import FormulaPreview from './components/FormulaPreview'
@@ -10,12 +11,12 @@ import FormulaMagicStage from './components/FormulaMagicStage'
 import MagicArrayStage from './components/MagicArrayStage'
 import MagicTowerStage from './components/MagicTowerStage'
 import FormulaSummary from './components/FormulaSummary'
-import { expressions, backgrounds, items, zootopiaColors as COLORS } from './assets/images'
+import MagicEnding from './components/MagicEnding'
 import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
 import './App.css'
 
-// 活动阶段: intro -> stage1(数字魔盒) -> preview(算式预览) -> stage2(算式魔法台) -> stage3(四十四魔法阵) -> stage4(九十九魔法塔) -> summary(算式总结) -> complete
-type AppState = 'intro' | 'stage1' | 'preview' | 'stage2' | 'stage3' | 'stage4' | 'summary' | 'complete'
+// 活动阶段: waiting -> intro -> stage1(数字魔盒) -> preview(算式预览) -> stage2(算式魔法台) -> stage3(四十四魔法阵) -> stage4(九十九魔法塔) -> summary(算式总结) -> complete
+type AppState = 'waiting' | 'intro' | 'stage1' | 'preview' | 'stage2' | 'stage3' | 'stage4' | 'summary' | 'complete'
 type TransitionDirection = 'left' | 'right' | null
 
 // 页面切换过渡遮罩动画
@@ -64,7 +65,7 @@ const TransitionText = styled(motion.span)`
 `
 
 function App() {
-  const [appState, setAppState] = useState<AppState>('intro')
+  const [appState, setAppState] = useState<AppState>('waiting')
   const [transitionDirection, setTransitionDirection] = useState<TransitionDirection>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionInfo, setTransitionInfo] = useState<{ emoji: string; text: string } | null>(null)
@@ -77,6 +78,7 @@ function App() {
   // 获取关卡信息
   const getStageInfo = (state: AppState): { emoji: string; text: string } => {
     switch (state) {
+      case 'waiting': return { emoji: '📖', text: '课前准备' }
       case 'intro': return { emoji: '🏠', text: '返回首页' }
       case 'stage1': return { emoji: '📦', text: '数字魔法盒' }
       case 'preview': return { emoji: '✨', text: '发现秘密' }
@@ -104,6 +106,11 @@ function App() {
     setTimeout(() => {
       setIsTransitioning(false)
     }, 700)
+  }
+
+  // 从等待页开始上课
+  const handleStartClass = () => {
+    transitionTo('intro', 'right')
   }
 
   const handleIntroComplete = () => {
@@ -198,6 +205,10 @@ function App() {
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
+        {appState === 'waiting' && (
+          <WaitingScreen key="waiting" onStart={handleStartClass} />
+        )}
+
         {appState === 'intro' && (
           <MagicIntro key="intro" onComplete={handleIntroComplete} />
         )}
@@ -215,7 +226,7 @@ function App() {
             <MagicMainApp />
             <StageNavigation
               currentStage={1}
-              onPrev={() => transitionTo('intro', 'left')}
+              onPrev={() => transitionTo('waiting', 'left')}
               onNext={goToPreview}
             />
           </motion.div>
@@ -307,9 +318,10 @@ function App() {
         )}
 
         {appState === 'complete' && (
-          <FinalCelebration key="complete" onRestart={() => {
-            transitionTo('intro', 'left')
-          }} />
+          <MagicEnding 
+            key="complete" 
+            onRestart={() => transitionTo('waiting', 'left')}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -343,7 +355,7 @@ function StageNavigation({
         whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
       >
         {currentStage === 1 ? <IoHome /> : <IoChevronBack />}
-        <span>{currentStage === 1 ? '返回首页' : stages[currentStage - 2].name}</span>
+        <span>{currentStage === 1 ? '返回封面' : stages[currentStage - 2].name}</span>
       </NavButton>
 
       {/* 关卡指示器 */}
@@ -471,149 +483,5 @@ const StagePoint = styled(motion.div) <{ active: boolean }>`
     transform: scale(0.95);
   }
 `
-
-// 最终庆祝界面 - 动物城主题
-function FinalCelebration({ onRestart }: { onRestart: () => void }) {
-  const colors = [COLORS.primary, COLORS.success, COLORS.gold, COLORS.accent, COLORS.purple]
-
-  return (
-    <motion.div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundImage: `url(${backgrounds.skyline})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        overflow: 'hidden'
-      }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* 背景遮罩 */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(135deg, rgba(30, 64, 175, 0.3) 0%, rgba(251, 191, 36, 0.2) 100%)'
-      }} />
-
-      {/* 背景彩带 */}
-      {Array.from({ length: 50 }).map((_, i) => (
-        <motion.div
-          key={i}
-          style={{
-            position: 'absolute',
-            width: 8 + Math.random() * 15,
-            height: 20 + Math.random() * 30,
-            background: colors[i % colors.length],
-            borderRadius: 5,
-            top: -50
-          }}
-          initial={{ x: Math.random() * window.innerWidth, y: -50 }}
-          animate={{ y: window.innerHeight + 100, rotate: [0, 360, 720] }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            delay: Math.random() * 2,
-            repeat: Infinity,
-            ease: 'linear'
-          }}
-        />
-      ))}
-
-      {/* 主内容 */}
-      <motion.div
-        style={{
-          textAlign: 'center',
-          zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.98)',
-          padding: '40px 60px',
-          borderRadius: 30,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)'
-        }}
-        initial={{ scale: 0, rotate: -10 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', damping: 10, delay: 0.3 }}
-      >
-        {/* 胜利徽章 */}
-        <motion.img
-          src={items.victoryBadge}
-          alt="Victory Badge"
-          style={{
-            width: 120,
-            height: 'auto',
-            marginBottom: 15,
-            filter: 'drop-shadow(0 5px 15px rgba(251, 191, 36, 0.5))'
-          }}
-          animate={{
-            rotate: [0, 5, 0, -5, 0],
-            scale: [1, 1.05, 1]
-          }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* 团队胜利图 */}
-        <motion.img
-          src={expressions.teamVictory}
-          alt="Team Victory"
-          style={{
-            width: 250,
-            height: 'auto',
-            marginBottom: 20,
-            borderRadius: 15,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
-          }}
-          animate={{
-            y: [0, -10, 0]
-          }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <motion.h1
-          style={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.success} 50%, ${COLORS.gold} 100%)`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: '0 0 15px'
-          }}
-        >
-          🏆 动物城成功拯救！
-        </motion.h1>
-
-        <p style={{ fontSize: '1.3rem', color: COLORS.textPrimary, margin: '0 0 10px' }}>
-          你和朱迪、尼克一起掌握了反转数的秘密！
-        </p>
-        <p style={{ fontSize: '1.1rem', color: COLORS.textSecondary, margin: '0 0 25px' }}>
-          🌟 数字迷雾已经消散，动物城恢复了和平！ 🌟
-        </p>
-
-        <motion.button
-          style={{
-            padding: '15px 40px',
-            border: 'none',
-            borderRadius: 25,
-            fontSize: '1.2rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.primaryLight} 100%)`,
-            color: 'white',
-            boxShadow: '0 4px 20px rgba(30, 64, 175, 0.4)'
-          }}
-          onClick={onRestart}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          🔄 再来一次冒险
-        </motion.button>
-      </motion.div>
-    </motion.div>
-  )
-}
 
 export default App

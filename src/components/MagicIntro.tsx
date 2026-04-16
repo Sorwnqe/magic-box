@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { backgrounds, characters, items, zootopiaColors as COLORS } from '../assets/images'
+import { IoRocketSharp } from 'react-icons/io5'
+import { GiModernCity, GiMagicSwirl } from 'react-icons/gi'
+import { TbNumbers } from 'react-icons/tb'
 
 interface MagicIntroProps {
   onComplete: () => void
@@ -187,7 +190,9 @@ export default function MagicIntro({ onComplete }: MagicIntroProps) {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                🏙️ 拯救动物城大冒险 🏙️
+                <SubtitleIcon><GiModernCity /></SubtitleIcon>
+                拯救动物城大冒险
+                <SubtitleIcon><GiModernCity /></SubtitleIcon>
               </Subtitle>
               
               <CharacterRow>
@@ -203,7 +208,10 @@ export default function MagicIntro({ onComplete }: MagicIntroProps) {
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.7, type: 'spring' }}
                 >
-                  <BadgeIcon>🔢</BadgeIcon>
+                  <BadgeIconWrapper>
+                    <TbNumbers />
+                    <GiMagicSwirl className="magic" />
+                  </BadgeIconWrapper>
                   <BadgeText>反转数魔法</BadgeText>
                 </MissionBadge>
                 <CharacterImageSmall
@@ -224,7 +232,7 @@ export default function MagicIntro({ onComplete }: MagicIntroProps) {
                 onClick={onComplete}
               >
                 <span>开始冒险</span>
-                <ButtonIcon>🚀</ButtonIcon>
+                <ButtonIconWrapper><IoRocketSharp /></ButtonIconWrapper>
               </StartButton>
               
               {/* 跳过故事按钮 */}
@@ -401,10 +409,20 @@ const TitleChar = styled(motion.span)<{ delay: number; color: string }>`
 `
 
 const Subtitle = styled(motion.p)`
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 1.3rem;
   font-weight: 600;
   color: ${COLORS.textSecondary};
   margin: 0;
+`
+
+const SubtitleIcon = styled.span`
+  font-size: 1.8rem;
+  color: ${COLORS.primary};
+  display: flex;
+  align-items: center;
 `
 
 const CharacterRow = styled.div`
@@ -431,8 +449,22 @@ const MissionBadge = styled(motion.div)`
   box-shadow: 0 5px 20px rgba(251, 191, 36, 0.4);
 `
 
-const BadgeIcon = styled.div`
-  font-size: 2.5rem;
+const BadgeIconWrapper = styled.div`
+  position: relative;
+  font-size: 2.8rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .magic {
+    position: absolute;
+    font-size: 1.5rem;
+    top: -5px;
+    right: -10px;
+    color: #fef3c7;
+    animation: ${float} 1.5s ease-in-out infinite;
+  }
 `
 
 const BadgeText = styled.div`
@@ -458,8 +490,10 @@ const StartButton = styled(motion.button)`
   margin-top: 10px;
 `
 
-const ButtonIcon = styled.span`
-  font-size: 1.5rem;
+const ButtonIconWrapper = styled.span`
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
   animation: ${float} 1s ease-in-out infinite;
 `
 
