@@ -2,19 +2,27 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import confetti from 'canvas-confetti'
-import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { backgrounds } from '../assets/images'
 import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
-// 配色 - 动物城主题
+// 密室侦探主题配色
 const COLORS = {
-  ...zootopiaColors,
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
   purple: '#8b5cf6',
+  purpleLight: '#a78bfa',
   indigo: '#6366f1',
   cyan: '#22d3ee',
   yellow: '#facc15',
+  gold: '#fbbf24',
+  goldLight: '#fde68a',
   green: '#22c55e',
   orange: '#fb923c',
-  pink: '#f472b6'
+  pink: '#f472b6',
+  textPrimary: '#1e293b',
+  textMuted: '#64748b',
+  bgDark: '#0f172a',
+  bgLight: '#1e293b',
 }
 
 
@@ -698,7 +706,7 @@ const BackgroundImage = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url(${backgrounds.cityPlaza});
+  background-image: url(${backgrounds.mysticAlley});
   background-size: cover;
   background-position: center;
   z-index: 0;
@@ -707,88 +715,56 @@ const BackgroundImage = styled.div`
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(250, 204, 21, 0.1) 100%);
-  }
-`
-
-const CharacterGuideLeft = styled(motion.div)`
-  position: fixed;
-  bottom: 100px;
-  left: 20px;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-`
-
-const CharacterImg = styled.img`
-  width: 140px;
-  height: auto;
-  filter: drop-shadow(0 5px 20px rgba(0,0,0,0.3));
-`
-
-const CharacterSpeech = styled(motion.div)`
-  background: white;
-  padding: 12px 18px;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  font-size: 0.85rem;
-  color: ${COLORS.textPrimary};
-  max-width: 180px;
-  text-align: center;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
   }
 `
 
 const Header = styled(motion.div)`
   text-align: center;
-  padding: 10px;
+  padding: 12px 35px 14px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
   margin: 0 auto;
   width: fit-content;
-  padding: 10px 30px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-top: none;
 `
 
 const HeaderContent = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 `
 
-const HeaderIcon = styled.img`
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
-  filter: drop-shadow(0 3px 10px rgba(251, 146, 60, 0.4));
+const StageTag = styled.div`
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldLight});
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
 `
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, ${COLORS.accent} 0%, ${COLORS.gold} 50%, ${COLORS.success} 100%);
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
+  font-weight: 800;
 `
 
 const Subtitle = styled.p`
-  color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
-  margin: 2px 0 0;
+  color: ${COLORS.purpleLight};
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 500;
 `
 
 const MainContent = styled.div`
@@ -1248,17 +1224,6 @@ export default function MagicArrayStage() {
       <BackgroundImage />
       <ParticleBackground />
       
-      {/* 朱迪角色引导 */}
-      <CharacterGuideLeft
-        initial={{ x: -150, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.5, type: 'spring' }}
-      >
-        <CharacterSpeech>
-          🐰 找出和为44的反转数对！
-        </CharacterSpeech>
-        <CharacterImg src={characters.judy} alt="Judy" />
-      </CharacterGuideLeft>
       
       <Header
         initial={{ opacity: 0, y: -20 }}
@@ -1266,11 +1231,9 @@ export default function MagicArrayStage() {
         transition={{ duration: 0.5 }}
       >
         <HeaderContent>
-          <HeaderIcon src={items.magicCircle} alt="魔法阵" />
-          <div>
-            <Title>第三关：四十四魔法阵</Title>
-            <Subtitle>和朱迪、尼克一起找出和为 44 的反转数对，激活广场防护罩！</Subtitle>
-          </div>
+          <StageTag>🔮 第二关</StageTag>
+          <Title>算式创造关</Title>
+          <Subtitle>找出所有和为 44 的反转数对，解锁密室第二道门！</Subtitle>
         </HeaderContent>
       </Header>
       
@@ -1410,74 +1373,6 @@ export default function MagicArrayStage() {
         </RightSection>
       </MainContent>
       
-      {/* 成功弹窗 */}
-      {/* <AnimatePresence>
-        {showSuccess && (
-          <motion.div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 99
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <SuccessBanner
-              initial={{ scale: 0, rotate: -10 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0 }}
-              transition={{ type: 'spring', damping: 15 }}
-            >
-              <motion.div
-                style={{ fontSize: '4rem', marginBottom: 15 }}
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
-              >
-                🎉
-              </motion.div>
-              <img 
-                src={expressions.judyNickHighfive} 
-                alt="Judy and Nick High Five"
-                style={{ width: '150px', marginBottom: '15px' }}
-              />
-              <h2 style={{ 
-                fontSize: '2rem', 
-                margin: '0 0 10px',
-                background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.success})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
-                恭喜通关！
-              </h2>
-              <p style={{ color: '#666', margin: '0 0 20px' }}>
-                你成功找到了所有和为44的反转数对！
-              </p>
-              <motion.button
-                style={{
-                  padding: '12px 30px',
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  color: 'white',
-                  background: `linear-gradient(135deg, ${COLORS.orange}, ${COLORS.yellow})`,
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer'
-                }}
-                onClick={onComplete}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                下一关 →
-              </motion.button>
-            </SuccessBanner>
-          </motion.div>
-        )}
-      </AnimatePresence> */}
     </Container>
   )
 }

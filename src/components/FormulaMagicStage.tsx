@@ -3,19 +3,28 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
-import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { backgrounds } from '../assets/images'
 import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
-// 配色
+// 密室侦探主题配色
 const COLORS = {
-  ...zootopiaColors,
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
   purple: '#8b5cf6',
+  purpleLight: '#a78bfa',
   indigo: '#6366f1',
   cyan: '#22d3ee',
   yellow: '#facc15',
+  gold: '#fbbf24',
+  goldLight: '#fde68a',
   green: '#22c55e',
   orange: '#fb923c',
-  pink: '#f472b6'
+  pink: '#f472b6',
+  accent: '#f59e0b',
+  textPrimary: '#1e293b',
+  textSecondary: '#64748b',
+  bgDark: '#0f172a',
+  bgLight: '#1e293b',
 }
 
 
@@ -149,88 +158,45 @@ const BackgroundImage = styled.div`
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.15) 100%);
-  }
-`
-
-const CharacterGuide = styled(motion.div)`
-  position: fixed;
-  bottom: 80px;
-  left: 20px;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-`
-
-const CharacterImg = styled.img`
-  width: 120px;
-  height: auto;
-  filter: drop-shadow(0 5px 20px rgba(0,0,0,0.3));
-`
-
-const CharacterSpeech = styled(motion.div)`
-  background: white;
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  font-size: 0.85rem;
-  color: ${COLORS.textPrimary};
-  max-width: 160px;
-  text-align: center;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
   }
 `
 
 const Header = styled(motion.div)`
   text-align: center;
-  padding: 10px;
+  padding: 12px 35px 14px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
   margin: 0 auto;
   width: fit-content;
-  padding: 10px 30px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-top: none;
 `
 
 const HeaderContent = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-`
-
-const HeaderIcon = styled.img`
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
-  filter: drop-shadow(0 3px 10px rgba(139, 92, 246, 0.4));
+  gap: 6px;
 `
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 50%, ${COLORS.accent} 100%);
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
+  font-weight: 800;
 `
 
 const Subtitle = styled.p`
-  color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
-  margin: 2px 0 0;
+  color: ${COLORS.purpleLight};
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 500;
 `
 
 const MainContent = styled.div`
@@ -497,13 +463,6 @@ const JudgeButton = styled(motion.button) <{ disabled?: boolean }>`
     transform: translateY(-2px);
     box-shadow: 0 6px 25px rgba(30, 64, 175, 0.45);
   }
-`
-
-const AIJudgeImage = styled(motion.img)`
-  width: 35px;
-  height: auto;
-  border-radius: 50%;
-  border: 2px solid white;
 `
 
 const ActiveInputHint = styled.div<{ active: boolean }>`
@@ -1232,33 +1191,14 @@ export default function FormulaMagicStage() {
       {/* 飞行动画Canvas - 全屏 */}
       <FullscreenCanvas ref={flyingCanvasRef} />
 
-      {/* 尼克角色引导 */}
-      <CharacterGuide
-        initial={{ x: -120, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.5, type: 'spring' }}
-      >
-        <CharacterSpeech
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.8 }}
-        >
-          🦊 输入算式，让魔法台验证！
-        </CharacterSpeech>
-        <CharacterImg src={characters.nick} alt="Nick" />
-      </CharacterGuide>
-
       <Header
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
         <HeaderContent>
-          <HeaderIcon src={items.magicScale} alt="魔法台" />
-          <div>
-            <Title>第二关：算式魔法台</Title>
-            <Subtitle>仿写反转数算式，让魔法台验证！</Subtitle>
-          </div>
+          <Title>✍️仿写算式</Title>
+          <Subtitle>根据规律仿写反转数算式，让魔法台验证！</Subtitle>
         </HeaderContent>
       </Header>
 
@@ -1430,10 +1370,7 @@ export default function FormulaMagicStage() {
             whileTap={{ scale: 0.98 }}
           >
             {isJudging ? (
-              <>
-                <AIJudgeImage src={characters.flash} alt="Flash" />
-                验证中...
-              </>
+              <>⏳ 验证中...</>
             ) : result ? (
               <>🔄 再试一次</>
             ) : (

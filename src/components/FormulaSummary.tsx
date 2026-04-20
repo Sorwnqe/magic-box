@@ -1,17 +1,25 @@
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
-import { characters, zootopiaColors } from '../assets/images'
+import { HiSparkles } from 'react-icons/hi2'
 
 const COLORS = {
-  ...zootopiaColors,
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
   purple: '#8b5cf6',
+  purpleLight: '#a78bfa',
   indigo: '#6366f1',
   cyan: '#22d3ee',
   green: '#22c55e',
   orange: '#fb923c',
   yellow: '#facc15',
-  pink: '#f472b6'
+  pink: '#f472b6',
+  gold: '#fbbf24',
+  goldLight: '#fde68a',
+  bgDark: '#0f172a',
+  bgLight: '#1e293b',
+  textPrimary: '#f8fafc',
+  textSecondary: '#94a3b8',
 }
 
 // 所有算式
@@ -53,16 +61,10 @@ const BackgroundImage = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: cover;
-  background-position: center;
+  background: 
+    radial-gradient(ellipse at center, rgba(139, 92, 246, 0.3) 0%, transparent 60%),
+    linear-gradient(135deg, ${COLORS.bgDark} 0%, #1e1b4b 50%, ${COLORS.bgDark} 100%);
   z-index: 0;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(34, 197, 94, 0.2) 100%);
-  }
 `
 
 const ContentWrapper = styled(motion.div)`
@@ -81,17 +83,24 @@ const TitleSection = styled(motion.div)`
 
 const Title = styled.h1`
   font-size: 2rem;
-  background: linear-gradient(135deg, ${COLORS.purple} 0%, ${COLORS.cyan} 50%, ${COLORS.green} 100%);
+  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  svg {
+    color: ${COLORS.gold};
+    -webkit-text-fill-color: ${COLORS.gold};
+  }
 `
 
 const Subtitle = styled.p`
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: ${COLORS.purpleLight};
   margin: 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 `
 
 const FormulaGrid = styled(motion.div)`
@@ -102,7 +111,7 @@ const FormulaGrid = styled(motion.div)`
 `
 
 const FormulaCard = styled(motion.div)<{ borderColor: string }>`
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 18px 25px;
@@ -110,12 +119,12 @@ const FormulaCard = styled(motion.div)<{ borderColor: string }>`
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 3px solid ${props => props.borderColor};
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 2px solid ${props => props.borderColor};
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
   
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.3);
   }
   
   transition: all 0.3s ease;
@@ -162,9 +171,9 @@ const BackButton = styled(motion.button)`
   padding: 14px 30px;
   font-size: 1rem;
   font-weight: 700;
-  color: ${COLORS.purple};
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid ${COLORS.purple};
+  color: ${COLORS.purpleLight};
+  background: transparent;
+  border: 2px solid ${COLORS.purpleLight};
   border-radius: 14px;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
@@ -178,55 +187,14 @@ const ContinueButton = styled(motion.button)`
   font-size: 1.1rem;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, ${COLORS.green} 0%, ${COLORS.cyan} 100%);
+  background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 100%);
   border: none;
   border-radius: 14px;
   cursor: pointer;
-  box-shadow: 0 6px 25px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 6px 25px rgba(79, 70, 229, 0.4);
   
   background-size: 200% 100%;
   animation: ${shimmer} 3s linear infinite;
-`
-
-const CharacterLeft = styled(motion.div)`
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-`
-
-
-const CharacterImg = styled.img`
-  width: 130px;
-  height: auto;
-  filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.3));
-`
-
-const SpeechBubble = styled(motion.div)`
-  background: white;
-  padding: 12px 16px;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-  font-size: 0.9rem;
-  color: ${COLORS.textPrimary};
-  max-width: 170px;
-  text-align: center;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
-  }
 `
 
 const Sparkles = styled.div`
@@ -291,26 +259,14 @@ export default function FormulaSummary({ onContinue, onBack }: Props) {
         ))}
       </Sparkles>
       
-      {/* 朱迪 */}
-      <CharacterLeft
-        initial={{ x: -150, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.3, type: 'spring' }}
-      >
-        <SpeechBubble>
-          🐰 反转数的秘密全部揭晓啦！
-        </SpeechBubble>
-        <CharacterImg src={characters.judy} alt="Judy" />
-      </CharacterLeft>
-      
       <ContentWrapper
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
         <TitleSection>
-          <Title>✨ 反转数魔法大全 ✨</Title>
-          <Subtitle>恭喜你发现了所有反转数的秘密！</Subtitle>
+          <Title><HiSparkles /> 反转数魔法大全 <HiSparkles /></Title>
+          <Subtitle>密室解锁成功！以下是所有反转数的秘密</Subtitle>
         </TitleSection>
         
         <FormulaGrid>

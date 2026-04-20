@@ -1,72 +1,132 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import styled from '@emotion/styled'
-import { keyframes } from '@emotion/react'
+// keyframes removed - not used
 import { preloadSounds } from './hooks/useSound'
 import WaitingScreen from './components/WaitingScreen'
 import MagicIntro from './components/MagicIntro'
 import MagicMainApp from './components/MagicMainApp'
-import FormulaPreview from './components/FormulaPreview'
 import FormulaMagicStage from './components/FormulaMagicStage'
 import MagicArrayStage from './components/MagicArrayStage'
 import MagicTowerStage from './components/MagicTowerStage'
-import FormulaSummary from './components/FormulaSummary'
+import KeyRewardTransition from './components/KeyRewardTransition'
+import StageAnnounce from './components/StageAnnounce'
+import FormulaShowcase from './components/FormulaShowcase'
+import RhythmVideoStage from './components/RhythmVideoStage'
 import MagicEnding from './components/MagicEnding'
 import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
 import './App.css'
 
-// 活动阶段: waiting -> intro -> stage1(数字魔盒) -> preview(算式预览) -> stage2(算式魔法台) -> stage3(四十四魔法阵) -> stage4(九十九魔法塔) -> summary(算式总结) -> complete
-type AppState = 'waiting' | 'intro' | 'stage1' | 'preview' | 'stage2' | 'stage3' | 'stage4' | 'summary' | 'complete'
+// 活动阶段：
+// waiting -> intro
+// -> stage1_announce (第一关介绍)
+// -> stage1_decode (数字解码关 - 第一部分: 数字魔盒)
+// -> stage1_imitate (数字解码关 - 第二部分: 仿写算式)
+// -> key1_transition (第一把钥匙 + 提示)
+// -> stage2_announce (第二关介绍)
+// -> stage2_create (算式创造关)
+// -> key2_transition (第二把钥匙)
+// -> stage3_announce (第三关介绍)
+// -> stage3_ultimate (终极算式室)
+// -> formula_showcase (显示所有和为99的算式 + 宝箱)
+// -> stage4_rhythm (律动视频 - 侦探能量操)
+// -> complete (终极彩蛋关)
+type AppState = 
+  | 'waiting' 
+  | 'intro' 
+  | 'stage1_announce'
+  | 'stage1_decode' 
+  | 'stage1_imitate'
+  | 'key1_transition'
+  | 'stage2_announce'
+  | 'stage2_create' 
+  | 'key2_transition'
+  | 'stage3_announce'
+  | 'stage3_ultimate'
+  | 'formula_showcase'
+  | 'stage4_rhythm'
+  | 'complete'
 type TransitionDirection = 'left' | 'right' | null
 
-// 页面切换过渡遮罩动画
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`
+// 密室主题切页动画 - 石门关闭效果
 
 const TransitionOverlay = styled(motion.div)`
   position: fixed;
   inset: 0;
   z-index: 9998;
-  background: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.95) 0%,
-    rgba(99, 102, 241, 0.95) 25%,
-    rgba(59, 130, 246, 0.95) 50%,
-    rgba(34, 211, 238, 0.95) 75%,
-    rgba(139, 92, 246, 0.95) 100%
-  );
-  background-size: 200% 100%;
-  animation: ${shimmer} 2s linear infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  overflow: hidden;
+`
+
+const DoorLeft = styled(motion.div)`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+  transform-origin: left center;
+  box-shadow: inset -20px 0 40px rgba(0,0,0,0.5);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(90deg, #475569, #64748b);
+  }
+`
+
+const DoorRight = styled(motion.div)`
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(270deg, #1e293b 0%, #334155 100%);
+  transform-origin: right center;
+  box-shadow: inset 20px 0 40px rgba(0,0,0,0.5);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(270deg, #475569, #64748b);
+  }
 `
 
 const TransitionContent = styled(motion.div)`
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
 `
 
 const TransitionEmoji = styled(motion.span)`
   font-size: 4rem;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 4px 20px rgba(251, 191, 36, 0.6));
 `
 
 const TransitionText = styled(motion.span)`
   font-size: 1.5rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  color: #fbbf24;
+  text-shadow: 0 2px 15px rgba(251, 191, 36, 0.5);
 `
 
 function App() {
   const [appState, setAppState] = useState<AppState>('waiting')
-  const [transitionDirection, setTransitionDirection] = useState<TransitionDirection>(null)
+  const [, setTransitionDirection] = useState<TransitionDirection>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionInfo, setTransitionInfo] = useState<{ emoji: string; text: string } | null>(null)
 
@@ -79,14 +139,19 @@ function App() {
   const getStageInfo = (state: AppState): { emoji: string; text: string } => {
     switch (state) {
       case 'waiting': return { emoji: '📖', text: '课前准备' }
-      case 'intro': return { emoji: '🏠', text: '返回首页' }
-      case 'stage1': return { emoji: '📦', text: '数字魔法盒' }
-      case 'preview': return { emoji: '✨', text: '发现秘密' }
-      case 'stage2': return { emoji: '🎯', text: '算式魔法台' }
-      case 'stage3': return { emoji: '🔮', text: '四十四魔法阵' }
-      case 'stage4': return { emoji: '🏰', text: '九十九魔法塔' }
-      case 'summary': return { emoji: '📜', text: '算式总结' }
-      case 'complete': return { emoji: '🏆', text: '任务完成' }
+      case 'intro': return { emoji: '🚪', text: '数字密室' }
+      case 'stage1_announce': return { emoji: '🔍', text: '第一关' }
+      case 'stage1_decode': return { emoji: '🔍', text: '数字解码关' }
+      case 'stage1_imitate': return { emoji: '✍️', text: '仿写算式' }
+      case 'key1_transition': return { emoji: '🗝️', text: '第一把钥匙' }
+      case 'stage2_announce': return { emoji: '🚪', text: '第二关' }
+      case 'stage2_create': return { emoji: '🔮', text: '算式创造关' }
+      case 'key2_transition': return { emoji: '🗝️', text: '第二把钥匙' }
+      case 'stage3_announce': return { emoji: '🚪', text: '第三关' }
+      case 'stage3_ultimate': return { emoji: '🏆', text: '终极算式室' }
+      case 'formula_showcase': return { emoji: '👑', text: '王牌侦探' }
+      case 'stage4_rhythm': return { emoji: '💪', text: '侦探能量操' }
+      case 'complete': return { emoji: '🎊', text: '终极彩蛋关' }
       default: return { emoji: '✨', text: '加载中' }
     }
   }
@@ -114,80 +179,56 @@ function App() {
   }
 
   const handleIntroComplete = () => {
-    transitionTo('stage1', 'right')
+    transitionTo('stage1_announce', 'right')
   }
 
-  const goToStage1 = () => {
-    transitionTo('stage1', 'left')
-  }
+  // 为了便利将每个跳转封装
+  const goTo = (state: AppState, direction: TransitionDirection = 'right') => 
+    () => transitionTo(state, direction)
 
-  const goToPreview = () => {
-    transitionTo('preview', 'right')
-  }
-
-  const goToStage2 = () => {
-    transitionTo('stage2', 'right')
-  }
-
-  const goToStage3 = () => {
-    transitionTo('stage3', 'right')
-  }
-
-  const goToStage4 = () => {
-    transitionTo('stage4', 'right')
-  }
-
-  const goToSummary = () => {
-    transitionTo('summary', 'right')
-  }
-
-  const handleComplete = () => {
-    transitionTo('complete', 'right')
-  }
-
-  // 根据方向计算动画参数 - 更炫酷的换页动效
-  const getSlideVariants = (direction: TransitionDirection) => ({
+  // 密室主题切页动画 - 淡入淡出
+  const getSlideVariants = () => ({
     initial: {
       opacity: 0,
-      x: direction === 'right' ? 200 : direction === 'left' ? -200 : 0,
-      scale: 0.85,
-      rotateY: direction === 'right' ? 15 : direction === 'left' ? -15 : 0,
-      filter: 'blur(10px)'
     },
     animate: {
       opacity: 1,
-      x: 0,
-      scale: 1,
-      rotateY: 0,
-      filter: 'blur(0px)'
     },
     exit: {
       opacity: 0,
-      x: direction === 'right' ? -200 : direction === 'left' ? 200 : 0,
-      scale: 0.85,
-      rotateY: direction === 'right' ? -15 : direction === 'left' ? 15 : 0,
-      filter: 'blur(10px)'
     }
   })
 
-  const variants = getSlideVariants(transitionDirection)
+  const variants = getSlideVariants()
 
   return (
     <div className="app">
-      {/* 页面切换过渡遮罩 */}
+      {/* 密室石门切换遮罩 */}
       <AnimatePresence>
         {isTransitioning && transitionInfo && (
           <TransitionOverlay
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.15 }}
           >
+            <DoorLeft
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              exit={{ scaleX: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            />
+            <DoorRight
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              exit={{ scaleX: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            />
             <TransitionContent
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.1, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2, delay: 0.1 }}
             >
               <TransitionEmoji
                 animate={{ 
@@ -213,9 +254,25 @@ function App() {
           <MagicIntro key="intro" onComplete={handleIntroComplete} />
         )}
 
-        {appState === 'stage1' && (
+        {/* 第一关介绍 - 不需要动画 */}
+        {appState === 'stage1_announce' && (
+          <div
+            key="stage1_announce"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <StageAnnounce
+              stageNumber={1}
+              stageTitle="数字解码关"
+              challengeText="密室第一道门出现了——探索数字魔盒的奥秘，解开反转数的密码！"
+              onContinue={goTo('stage1_decode')}
+            />
+          </div>
+        )}
+
+        {/* 第一关·数字解码关 - 第一部分：数字魔盒 */}
+        {appState === 'stage1_decode' && (
           <motion.div
-            key="stage1"
+            key="stage1_decode"
             variants={variants}
             initial="initial"
             animate="animate"
@@ -226,29 +283,16 @@ function App() {
             <MagicMainApp />
             <StageNavigation
               currentStage={1}
-              onPrev={() => transitionTo('waiting', 'left')}
-              onNext={goToPreview}
+              onPrev={goTo('waiting', 'left')}
+              onNext={goTo('stage1_imitate')}
             />
           </motion.div>
         )}
 
-        {appState === 'preview' && (
+        {/* 第一关·数字解码关 - 第二部分：仿写算式 */}
+        {appState === 'stage1_imitate' && (
           <motion.div
-            key="preview"
-            variants={variants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <FormulaPreview onContinue={goToStage2} onBack={goToStage1} />
-          </motion.div>
-        )}
-
-        {appState === 'stage2' && (
-          <motion.div
-            key="stage2"
+            key="stage1_imitate"
             variants={variants}
             initial="initial"
             animate="animate"
@@ -258,16 +302,47 @@ function App() {
           >
             <FormulaMagicStage />
             <StageNavigation
-              currentStage={2}
-              onPrev={goToStage1}
-              onNext={goToStage3}
+              currentStage={1}
+              onPrev={goTo('stage1_decode', 'left')}
+              onNext={goTo('key1_transition')}
             />
           </motion.div>
         )}
 
-        {appState === 'stage3' && (
+        {/* 过渡页：第一把钥匙 - 不需要动画 */}
+        {appState === 'key1_transition' && (
+          <div
+            key="key1_transition"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <KeyRewardTransition
+              keyNumber={1}
+              hintText="小侦探们必须能自己创造有趣算式，才能继续前进！"
+              floatingFormulas={['12+21=33', '23+32=55']}
+              onContinue={goTo('stage2_announce')}
+            />
+          </div>
+        )}
+
+        {/* 第二关介绍 - 不需要动画 */}
+        {appState === 'stage2_announce' && (
+          <div
+            key="stage2_announce"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <StageAnnounce
+              stageNumber={2}
+              stageTitle="算式创造关"
+              challengeText="密室第二道门出现了——写出所有和为 44 的有趣算式，才能破解此关！"
+              onContinue={goTo('stage2_create')}
+            />
+          </div>
+        )}
+
+        {/* 第二关·算式创造关 */}
+        {appState === 'stage2_create' && (
           <motion.div
-            key="stage3"
+            key="stage2_create"
             variants={variants}
             initial="initial"
             animate="animate"
@@ -277,16 +352,47 @@ function App() {
           >
             <MagicArrayStage />
             <StageNavigation
-              currentStage={3}
-              onPrev={goToStage2}
-              onNext={goToStage4}
+              currentStage={2}
+              onPrev={goTo('stage1_imitate', 'left')}
+              onNext={goTo('key2_transition')}
             />
           </motion.div>
         )}
 
-        {appState === 'stage4' && (
+        {/* 过渡页：第二把钥匙 - 不需要动画 */}
+        {appState === 'key2_transition' && (
+          <div
+            key="key2_transition"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <KeyRewardTransition
+              keyNumber={2}
+              hintText="叮——！第二关解锁！获得第二把钥匙！"
+              floatingFormulas={['13+31=44', '22+22=44']}
+              onContinue={goTo('stage3_announce')}
+            />
+          </div>
+        )}
+
+        {/* 第三关介绍 - 不需要动画 */}
+        {appState === 'stage3_announce' && (
+          <div
+            key="stage3_announce"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <StageAnnounce
+              stageNumber={3}
+              stageTitle="终极算式室"
+              challengeText="密室终极挑战：写出三个和是 99 的有趣算式，即可打开宝箱，获得「王牌侦探」勋章！"
+              onContinue={goTo('stage3_ultimate')}
+            />
+          </div>
+        )}
+
+        {/* 第三关·终极算式室 */}
+        {appState === 'stage3_ultimate' && (
           <motion.div
-            key="stage4"
+            key="stage3_ultimate"
             variants={variants}
             initial="initial"
             animate="animate"
@@ -294,33 +400,49 @@ function App() {
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
-            <MagicTowerStage onComplete={goToSummary} />
+            <MagicTowerStage onComplete={goTo('formula_showcase')} />
+            <StageNavigation
+              currentStage={3}
+              onPrev={goTo('stage2_create', 'left')}
+              onNext={goTo('formula_showcase')}
+            />
+          </motion.div>
+        )}
+
+        {/* 过渡页：算式展示 + 宝箱 - 不需要动画 */}
+        {appState === 'formula_showcase' && (
+          <div
+            key="formula_showcase"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <FormulaShowcase onContinue={goTo('stage4_rhythm')} />
+          </div>
+        )}
+
+        {/* 第四关·律动视频 */}
+        {appState === 'stage4_rhythm' && (
+          <motion.div
+            key="stage4_rhythm"
+            variants={variants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <RhythmVideoStage onContinue={goTo('complete')} />
             <StageNavigation
               currentStage={4}
-              onPrev={goToStage3}
-              onNext={goToSummary}
+              onPrev={goTo('stage3_ultimate', 'left')}
+              onNext={goTo('complete')}
             />
-          </motion.div>
-        )}
-
-        {appState === 'summary' && (
-          <motion.div
-            key="summary"
-            variants={variants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <FormulaSummary onContinue={handleComplete} onBack={goToStage4} />
           </motion.div>
         )}
 
         {appState === 'complete' && (
           <MagicEnding 
             key="complete" 
-            onRestart={() => transitionTo('waiting', 'left')}
+            onRestart={goTo('waiting', 'left')}
           />
         )}
       </AnimatePresence>
@@ -339,10 +461,10 @@ function StageNavigation({
   onNext: () => void
 }) {
   const stages = [
-    { id: 1, label: '1', name: '数字魔法盒' },
-    { id: 2, label: '2', name: '算式魔法台' },
-    { id: 3, label: '3', name: '四十四魔法阵' },
-    { id: 4, label: '4', name: '九十九魔法塔' }
+    { id: 1, label: '1', name: '数字解码关' },
+    { id: 2, label: '2', name: '算式创造关' },
+    { id: 3, label: '3', name: '终极算式室' },
+    { id: 4, label: '4', name: '侦探能量操' }
   ]
 
   return (

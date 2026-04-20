@@ -3,16 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
-import { characters, backgrounds, zootopiaColors } from '../assets/images'
+import { backgrounds } from '../assets/images'
 
 const COLORS = {
-  ...zootopiaColors,
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
   purple: '#8b5cf6',
+  purpleLight: '#a78bfa',
   indigo: '#6366f1',
   cyan: '#22d3ee',
   green: '#22c55e',
   orange: '#fb923c',
-  yellow: '#facc15'
+  yellow: '#facc15',
+  gold: '#fbbf24',
+  goldLight: '#fde68a',
+  bgDark: '#0f172a',
 }
 
 const float = keyframes`
@@ -148,50 +153,6 @@ const Divider = styled.div`
   height: 2px;
   background: linear-gradient(90deg, transparent, ${COLORS.purple}, transparent);
   margin: 15px 0;
-`
-
-const CharacterLeft = styled(motion.div)`
-  position: fixed;
-  bottom: 60px;
-  left: 40px;
-  z-index: 20;
-`
-
-const CharacterRight = styled(motion.div)`
-  position: fixed;
-  bottom: 60px;
-  right: 40px;
-  z-index: 20;
-`
-
-const CharacterImg = styled.img`
-  width: 180px;
-  height: auto;
-  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.3));
-`
-
-const SpeechBubble = styled(motion.div)`
-  background: white;
-  padding: 15px 20px;
-  border-radius: 18px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  font-size: 1rem;
-  color: ${COLORS.textPrimary};
-  max-width: 200px;
-  text-align: center;
-  margin-bottom: 15px;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid white;
-  }
 `
 
 const ButtonGroup = styled.div`
@@ -336,38 +297,6 @@ export default function FormulaPreview({ onContinue, onBack }: FormulaPreviewPro
           <Sparkle key={s.id} x={s.x} y={s.y} delay={s.delay} />
         ))}
       </Sparkles>
-
-      {/* 朱迪 - 左侧 */}
-      <CharacterLeft
-        initial={{ x: -200, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
-      >
-        <SpeechBubble
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.6, type: 'spring' }}
-        >
-          🐰 观察这两道算式，发现规律了吗？
-        </SpeechBubble>
-        <CharacterImg src={characters.judy} alt="Judy" />
-      </CharacterLeft>
-
-      {/* 尼克 - 右侧 */}
-      <CharacterRight
-        initial={{ x: 200, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.4, type: 'spring', stiffness: 100 }}
-      >
-        <SpeechBubble
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.8, type: 'spring' }}
-        >
-          🦊 用你找到的规律，一起试试吧！
-        </SpeechBubble>
-        <CharacterImg src={characters.nick} alt="Nick" />
-      </CharacterRight>
 
       <ContentWrapper
         initial={{ opacity: 0, y: 30 }}

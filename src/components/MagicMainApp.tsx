@@ -3,7 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import confetti from 'canvas-confetti'
 import { useMagicBox } from '../stores/useMagicBox'
-import { backgrounds, zootopiaColors as COLORS } from '../assets/images'
+import { backgrounds } from '../assets/images'
+
+// 密室侦探主题配色
+const COLORS = {
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
+  purple: '#8b5cf6',
+  purpleLight: '#a78bfa',
+  success: '#22c55e',
+  accent: '#fbbf24',
+  accentLight: '#fde68a',
+  gold: '#fbbf24',
+  textPrimary: '#1e293b',
+  textMuted: '#64748b',
+  bgDark: '#0f172a',
+  bgLight: '#1e293b',
+}
 import { IoArrowDown, IoBackspace } from 'react-icons/io5'
 import { MdClear } from 'react-icons/md'
 import { playPop, playClick, playSuccess } from '../hooks/useSound'
@@ -716,9 +732,11 @@ export default function MagicMainApp() {
         />
       </FullscreenCanvas>
       
-      {/* 顶部标题 */}
+      {/* 顶部标题 - 密室主题 */}
       <Header>
-        <Title>第一关：数字魔法盒</Title>
+        <StageTag>🔍 第一关</StageTag>
+        <Title>数字解码关</Title>
+        <Subtitle>探索数字魔盒的秘密，解开密室的第一道锁！</Subtitle>
       </Header>
       
       <MainContent>
@@ -807,36 +825,56 @@ const Container = styled.div`
 const Bg = styled.div`
   position: fixed;
   inset: 0;
-  background: url(${backgrounds.policeStation}) center/cover;
+  background: url(${backgrounds.mysticAlley}) center/cover;
   z-index: 0;
   &::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(30,64,175,0.55), rgba(124,58,237,0.45));
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
   }
 `
 
 const Header = styled.div`
   text-align: center;
-  padding: 10px;
+  padding: 12px 35px 14px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
   margin: 0 auto;
   width: fit-content;
-  padding: 10px 30px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-top: none;
+`
+
+const StageTag = styled.div`
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, ${COLORS.accent}, ${COLORS.accentLight});
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
 `
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 50%, ${COLORS.primaryLight} 100%);
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, ${COLORS.accentLight} 0%, ${COLORS.accent} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
+`
+
+const Subtitle = styled.p`
+  color: ${COLORS.purpleLight};
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+  font-weight: 500;
 `
 
 const MainContent = styled.div`

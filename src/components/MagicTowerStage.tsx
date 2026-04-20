@@ -13,20 +13,28 @@ import {
   FaStar,
   FaCrown
 } from 'react-icons/fa'
-import { backgrounds, characters, items, zootopiaColors } from '../assets/images'
+import { backgrounds } from '../assets/images'
 import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
-// 配色 - 动物城主题
+// 密室侦探主题配色
 const COLORS = {
-  ...zootopiaColors,
+  primary: '#4f46e5',
+  primaryLight: '#818cf8',
   purple: '#7c3aed',
+  purpleLight: '#a78bfa',
   deepPurple: '#5b21b6',
   gold: '#fbbf24',
+  goldLight: '#fde68a',
   orange: '#f97316',
   cyan: '#06b6d4',
   green: '#22c55e',
   pink: '#ec4899',
-  red: '#ef4444'
+  red: '#ef4444',
+  textPrimary: '#1e293b',
+  textMuted: '#64748b',
+  textSecondary: '#64748b',
+  bgDark: '#0f172a',
+  bgLight: '#1e293b',
 }
 
 // 所有和为99的反转数对
@@ -929,7 +937,7 @@ const BackgroundImage = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url(${backgrounds.cityHallTower});
+  background-image: url(${backgrounds.mysticAlley});
   background-size: cover;
   background-position: center;
   z-index: 0;
@@ -938,92 +946,60 @@ const BackgroundImage = styled.div`
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(91, 33, 182, 0.4) 0%, rgba(124, 58, 237, 0.3) 100%);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
   }
 `
 
-const CharacterGuide = styled(motion.div)`
-  position: fixed;
-  bottom: 80px;
-  left: 20px;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-`
-
-const CharacterImg = styled.img`
-  width: 120px;
-  height: auto;
-  filter: drop-shadow(0 5px 20px rgba(0,0,0,0.3));
-`
-
-const CharacterSpeech = styled(motion.div)`
-  background: white;
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  font-size: 0.85rem;
-  color: ${COLORS.textPrimary};
-  max-width: 160px;
-  text-align: center;
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
-  }
-`
-
-// 白色背景 Header
+// 密室主题 Header
 const Header = styled(motion.div)`
   text-align: center;
-  padding: 10px;
+  padding: 12px 35px 14px;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   backdrop-filter: blur(10px);
   border-radius: 0 0 20px 20px;
   margin: 0 auto;
   width: fit-content;
-  padding: 10px 30px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-top: none;
 `
 
 const HeaderContent = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 `
 
-const HeaderIcon = styled.img`
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
-  filter: drop-shadow(0 3px 10px rgba(124, 58, 237, 0.4));
+const StageTag = styled.div`
+  display: inline-block;
+  padding: 4px 14px;
+  background: linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldLight});
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
 `
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 50%, ${COLORS.gold} 100%);
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 800;
 `
 
-const Subtitle = styled.p`
-  color: ${COLORS.textSecondary};
-  font-size: 0.8rem;
-  margin: 2px 0 0;
+const SubtitleText = styled.p`
+  color: ${COLORS.purpleLight};
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 500;
 `
 
 const MainContent = styled.div`
@@ -1570,33 +1546,19 @@ export default function MagicTowerStage({ onComplete }: Props) {
       <BackgroundImage />
       <ParticleBackground />
       
-      {/* 狮子市长角色 */}
-      <CharacterGuide
-        initial={{ x: -150, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.5, type: 'spring' }}
-      >
-        <CharacterSpeech>
-          🦁 找到{REQUIRED_COUNT}个和为99的密码！
-        </CharacterSpeech>
-        <CharacterImg src={characters.lionheart} alt="Lionheart" />
-      </CharacterGuide>
-      
       <Header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <HeaderContent>
-          <HeaderIcon src={items.magicKey} alt="魔法钥匙" />
-          <div>
-            <Title>
-              <GiCastle size={24} />
-              第四关：九十九魔法塔
-              <GiCastle size={24} />
-            </Title>
-            <Subtitle>🔒 输入密码算式，打开魔法塔大门！</Subtitle>
-          </div>
+          <StageTag>🏆 第三关</StageTag>
+          <Title>
+            <GiCastle size={22} />
+            终极算式室
+            <GiCastle size={22} />
+          </Title>
+          <SubtitleText>找出所有和为 99 的反转数对，解锁密室最终宝藏！</SubtitleText>
         </HeaderContent>
       </Header>
       
@@ -1895,7 +1857,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
                 whileTap={{ scale: 0.95 }}
               >
                 <GiOpenGate size={24} />
-                动物城成功拯救！🎊
+                密室大门已开启！🎊
               </motion.button>
             </SuccessBanner>
           </SuccessOverlay>
