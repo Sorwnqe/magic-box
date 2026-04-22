@@ -60,10 +60,7 @@ export default function MagicIntro({ onComplete }: MagicIntroProps) {
       const timer = setTimeout(() => setPhase('door-opening'), 1500)
       return () => clearTimeout(timer)
     } else if (phase === 'door-opening') {
-      const timer = setTimeout(() => setPhase('equations-scroll'), 1800)
-      return () => clearTimeout(timer)
-    } else if (phase === 'equations-scroll') {
-      const timer = setTimeout(() => setPhase('ready'), 5000)
+      const timer = setTimeout(() => setPhase('ready'), 1800)
       return () => clearTimeout(timer)
     }
   }, [phase])

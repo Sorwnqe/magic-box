@@ -1555,7 +1555,7 @@ export default function MagicTowerStage({ onComplete }: Props) {
           <StageTag>🏆 第三关</StageTag>
           <Title>
             <GiCastle size={22} />
-            终极算式室
+            算式创造关
             <GiCastle size={22} />
           </Title>
           <SubtitleText>找出所有和为 99 的反转数对，解锁密室最终宝藏！</SubtitleText>

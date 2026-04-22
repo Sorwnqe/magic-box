@@ -1231,8 +1231,8 @@ export default function MagicArrayStage() {
         transition={{ duration: 0.5 }}
       >
         <HeaderContent>
-          <StageTag>🔮 第二关</StageTag>
-          <Title>算式创造关</Title>
+          <StageTag>🔮 第三关</StageTag>
+          <Title>算式探秘关</Title>
           <Subtitle>找出所有和为 44 的反转数对，解锁密室第二道门！</Subtitle>
         </HeaderContent>
       </Header>
