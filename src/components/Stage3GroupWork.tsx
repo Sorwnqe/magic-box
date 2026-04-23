@@ -114,10 +114,9 @@ export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkP
                 </BlockHeader>
                 <ItemList>
                   {[
-                    '查一查：互相核对，是不是个位十位互换的有趣算式。',
-                    '说一说：交流方法，说说你是怎样找到和为99的算式。',
-                    '补一补：把自己没有、同伴写对的算式补充完整。',
-                    '理一理：小组合作，把所有正确算式整理好准备展示。',
+                    '查算式：核对是不是有趣算式',
+                    '说方法：说说你是怎么找到的',
+                    '补遗漏：补齐自己没有的算式',
                   ].map((text, i) => (
                     <Item key={i}>
                       <ItemNum>{i + 1}.</ItemNum>

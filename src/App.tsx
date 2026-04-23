@@ -12,6 +12,7 @@ import Stage3Module from './components/Stage3Module'
 import Stage3GroupWork from './components/Stage3GroupWork'
 import Stage4CodeWall from './components/Stage4CodeWall'
 import Stage5NumberStairs from './components/Stage5NumberStairs'
+import Stage6DetectiveTask from './components/Stage6DetectiveTask'
 import MagicEnding from './components/MagicEnding'
 import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
 import './App.css'
@@ -28,6 +29,7 @@ import './App.css'
 // -> stage3_group (小组合作倒计时)
 // -> stage4_codewall (智慧密码墙)
 // -> stage5_stairs (数字楼梯)
+// -> stage6_detective (侦探拓展任务)
 // -> complete (结局)
 type AppState = 
   | 'waiting' 
@@ -42,6 +44,7 @@ type AppState =
   | 'stage3_group'
   | 'stage4_codewall'
   | 'stage5_stairs'
+  | 'stage6_detective'
   | 'complete'
   | 'complete'
 type TransitionDirection = 'left' | 'right' | null
@@ -148,6 +151,7 @@ function App() {
       case 'stage3_group': return { emoji: '👥', text: '小组合作' }
       case 'stage4_codewall': return { emoji: '🔐', text: '智慧密码墙' }
       case 'stage5_stairs': return { emoji: '🧱', text: '数字楼梯' }
+      case 'stage6_detective': return { emoji: '🔎', text: '拓展任务' }
       case 'complete': return { emoji: '🎊', text: '结局' }
       default: return { emoji: '✨', text: '加载中' }
     }
@@ -401,8 +405,21 @@ function App() {
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
             <Stage5NumberStairs
-              onContinue={goTo('complete')}
+              onContinue={goTo('stage6_detective')}
               onBack={goTo('stage4_codewall', 'left')}
+            />
+          </div>
+        )}
+
+        {/* 侦探拓展任务 */}
+        {appState === 'stage6_detective' && (
+          <div
+            key="stage6_detective"
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <Stage6DetectiveTask
+              onContinue={goTo('complete')}
+              onBack={goTo('stage5_stairs', 'left')}
             />
           </div>
         )}
