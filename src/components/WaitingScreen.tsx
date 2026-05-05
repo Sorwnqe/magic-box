@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
@@ -74,6 +75,16 @@ const bounce = keyframes`
   50% { transform: translateY(-8px) scale(1.05); }
 `
 
+const talkMouth = keyframes`
+  0% { transform: translateX(-50%) scaleY(0.3); }
+  100% { transform: translateX(-50%) scaleY(1); }
+`
+
+const speakerBounce = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+`
+
 // SVG 手绘风格边框路径
 const HandDrawnBorder = () => (
   <svg viewBox="0 0 400 280" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
@@ -104,8 +115,22 @@ const HandDrawnBorder = () => (
 )
 
 export default function WaitingScreen({ onStart }: WaitingScreenProps) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  const toggleAudio = () => {
+    if (!audioRef.current) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
+    }
+  }
+
   const handleStart = () => {
     playClick()
+    if (audioRef.current) audioRef.current.pause()
     onStart()
   }
 
@@ -191,6 +216,29 @@ export default function WaitingScreen({ onStart }: WaitingScreenProps) {
             <GiSpellBook style={{ fontSize: '1.8rem', marginRight: 12, color: '#60a5fa' }} />
             第五单元 · 100以内数加与减（一）
           </SubtitleWrapper>
+
+          {/* 课前播客 */}
+          <PodcastBar
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85 }}
+          >
+            <SpeakerIcon $talking={isPlaying}>
+              <SpeakerFace>
+                <SpeakerEye style={{ left: '10px' }} />
+                <SpeakerEye style={{ right: '10px' }} />
+                <SpeakerMouth $talking={isPlaying} />
+              </SpeakerFace>
+            </SpeakerIcon>
+            <PodcastInfo>
+              <PodcastLabel>课前小电台</PodcastLabel>
+              <PodcastTitle>有趣的算式小课堂</PodcastTitle>
+            </PodcastInfo>
+            <PlayButton onClick={toggleAudio}>
+              {isPlaying ? '⏸' : '▶'}
+            </PlayButton>
+            <audio ref={audioRef} src="/audio/podcast.mp3" preload="none" />
+          </PodcastBar>
           
           {/* 教师信息 */}
           <TeacherRow
@@ -204,7 +252,7 @@ export default function WaitingScreen({ onStart }: WaitingScreenProps) {
             </InfoTag>
             <InfoTag>
               <IoCalendar style={{ fontSize: '1.4rem' }} />
-              <span>2026年 4月</span>
+              <span>2026年 5月</span>
             </InfoTag>
           </TeacherRow>
           
@@ -435,6 +483,97 @@ const StartButton = styled(motion.button)`
   
   &:hover {
     animation: none;
+  }
+`
+
+const PodcastBar = styled(motion.div)`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #bfdbfe;
+  border-radius: 50px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.12);
+`
+
+const SpeakerIcon = styled.div<{ $talking: boolean }>`
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  animation: ${props => props.$talking ? `${speakerBounce} 0.4s ease-in-out infinite` : 'none'};
+`
+
+const SpeakerFace = styled.div`
+  position: absolute;
+  inset: 0;
+`
+
+const SpeakerEye = styled.div`
+  position: absolute;
+  top: 12px;
+  width: 5px;
+  height: 5px;
+  background: #1e293b;
+  border-radius: 50%;
+`
+
+const SpeakerMouth = styled.div<{ $talking: boolean }>`
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  width: 14px;
+  height: 7px;
+  background: #1e293b;
+  border-radius: 0 0 14px 14px;
+  transform-origin: top center;
+  animation: ${props => props.$talking ? `${talkMouth} 0.25s ease-in-out infinite alternate` : 'none'};
+`
+
+const PodcastInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+`
+
+const PodcastLabel = styled.span`
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+`
+
+const PodcastTitle = styled.span`
+  font-size: 0.95rem;
+  color: #1e40af;
+  font-weight: 700;
+`
+
+const PlayButton = styled.button`
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+  transition: transform 0.15s ease;
+  
+  &:hover {
+    transform: scale(1.08);
+  }
+  
+  &:active {
+    transform: scale(0.95);
   }
 `
 

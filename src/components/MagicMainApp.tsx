@@ -732,11 +732,9 @@ export default function MagicMainApp() {
         />
       </FullscreenCanvas>
       
-      {/* 顶部标题 - 密室主题 */}
+      {/* 顶部标题 */}
       <Header>
-        <StageTag>🔍 第一关</StageTag>
-        <Title>数字解码关</Title>
-        <Subtitle>探索数字魔盒的秘密，解开密室的第一道锁！</Subtitle>
+        <Title>数字魔法</Title>
       </Header>
       
       <MainContent>
@@ -849,32 +847,13 @@ const Header = styled.div`
   border-top: none;
 `
 
-const StageTag = styled.div`
-  display: inline-block;
-  padding: 4px 14px;
-  background: linear-gradient(135deg, ${COLORS.accent}, ${COLORS.accentLight});
-  color: white;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
-`
-
 const Title = styled.h1`
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   background: linear-gradient(135deg, ${COLORS.accentLight} 0%, ${COLORS.accent} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
   font-weight: 800;
-`
-
-const Subtitle = styled.p`
-  color: ${COLORS.purpleLight};
-  font-size: 0.85rem;
-  margin: 6px 0 0;
-  font-weight: 500;
 `
 
 const MainContent = styled.div`

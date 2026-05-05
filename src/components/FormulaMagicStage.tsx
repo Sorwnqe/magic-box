@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
-import { backgrounds } from '../assets/images'
+
 import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
 
 // 密室侦探主题配色
@@ -143,24 +143,36 @@ const Container = styled.div`
   overflow: hidden;
 `
 
-const BackgroundImage = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url(${backgrounds.mysticAlley});
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
-  }
+const BackgroundGradient = styled.div`
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(79, 70, 229, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(251, 191, 36, 0.2) 0%, transparent 50%),
+    linear-gradient(135deg, ${COLORS.bgDark} 0%, #1e1b4b 100%);
 `
+
+const ParticleLayer = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+`
+
+const sparkleAnim = keyframes`
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+`
+
+const Particle = styled.div`
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: ${COLORS.purpleLight};
+  border-radius: 50%;
+  box-shadow: 0 0 10px ${COLORS.purple};
+  animation: ${sparkleAnim} 3s ease-in-out infinite;
+`
+
 
 const Header = styled(motion.div)`
   text-align: center;
@@ -192,27 +204,12 @@ const Title = styled.h1`
   font-weight: 800;
 `
 
-const Subtitle = styled.p`
-  color: ${COLORS.purpleLight};
-  font-size: 0.85rem;
-  margin: 0;
-  font-weight: 500;
-`
-
 const MainContent = styled.div`
   flex: 1;
   display: flex;
   gap: 20px;
   padding: 15px 25px 90px;
   z-index: 10;
-`
-
-// 三栏布局
-const LeftPanel = styled.div`
-  flex: 0 0 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 `
 
 const CenterPanel = styled.div`
@@ -273,72 +270,6 @@ const FullscreenCanvas = styled.canvas`
   z-index: 1000;
 `
 
-const ScoreCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 6px 25px rgba(139, 92, 246, 0.15);
-  text-align: center;
-`
-
-const ScoreTitle = styled.h3`
-  color: ${COLORS.purple};
-  font-size: 0.9rem;
-  margin: 0 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-`
-
-const ScoreNumber = styled.div`
-  font-size: 3rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, ${COLORS.purple} 0%, ${COLORS.cyan} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1;
-`
-
-const ScoreLabel = styled.div`
-  font-size: 0.85rem;
-  color: ${COLORS.textSecondary};
-  margin-top: 4px;
-`
-
-const TipCard = styled(motion.div)`
-  // background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(34, 211, 238, 0.1));
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 18px;
-  padding: 15px;
-  border: 2px solid rgba(139, 92, 246, 0.2);
-`
-
-const TipTitle = styled.h3`
-  color: ${COLORS.purple};
-  font-size: 0.85rem;
-  margin: 0 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`
-
-const TipItem = styled.div`
-  font-size: 0.8rem;
-  color: ${COLORS.textSecondary};
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(139, 92, 246, 0.2);
-  
-  &:last-child {
-    border-bottom: none;
-  }
-  
-  strong {
-    color: ${COLORS.purple};
-  }
-`
 
 // 右侧输入面板
 const InputCard = styled(motion.div)`
@@ -486,7 +417,7 @@ export default function FormulaMagicStage() {
   const [activeInput, setActiveInput] = useState<ActiveInput>('left')
   const [isJudging, setIsJudging] = useState(false)
   const [result, setResult] = useState<{ valid: boolean; message: string } | null>(null)
-  const [successCount, setSuccessCount] = useState(0)
+  // const [successCount, setSuccessCount] = useState(0)
   // showSuccess 不再使用，第二关不弹通关界面
   // Canvas refs
   const platformCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -1144,7 +1075,7 @@ export default function FormulaMagicStage() {
 
     if (validation.valid) {
       playSuccess() // 成功音效
-      setSuccessCount(prev => prev + 1)
+      // setSuccessCount(prev => prev + 1)
 
       // 庆祝特效
       confetti({
@@ -1164,18 +1095,18 @@ export default function FormulaMagicStage() {
   const handleReset = () => {
     playClick() // 点击音效
     // 清除结果动画
-    resultAnimRef.current = { 
-      active: false, 
-      type: 'correct', 
-      scale: 0, 
-      alpha: 0, 
-      textAlpha: 0, 
+    resultAnimRef.current = {
+      active: false,
+      type: 'correct',
+      scale: 0,
+      alpha: 0,
+      textAlpha: 0,
       textY: 0,
       formulaAlpha: 0,
       formulaScale: 0
     }
     platformAnimRef.current.glowIntensity = 0
-    
+
     setLeftNum('')
     setRightNum('')
     setSumNum('')
@@ -1186,7 +1117,21 @@ export default function FormulaMagicStage() {
 
   return (
     <Container>
-      <BackgroundImage />
+
+      <BackgroundGradient />
+
+      <ParticleLayer>
+        {Array.from({ length: 20 }).map((_, i) => (
+          <Particle
+            key={i}
+            style={{
+              left: `${(i * 17 + 7) % 100}%`,
+              top: `${(i * 23 + 11) % 100}%`,
+              animationDelay: `${(i * 0.3) % 3}s`,
+            }}
+          />
+        ))}
+      </ParticleLayer>
 
       {/* 飞行动画Canvas - 全屏 */}
       <FullscreenCanvas ref={flyingCanvasRef} />
@@ -1198,13 +1143,12 @@ export default function FormulaMagicStage() {
       >
         <HeaderContent>
           <Title>✍️仿写算式</Title>
-          <Subtitle>根据规律仿写反转数算式，让魔法台验证！</Subtitle>
         </HeaderContent>
       </Header>
 
       <MainContent>
         {/* 左侧 - 得分和提示 */}
-        <LeftPanel>
+        {/* <LeftPanel>
           <ScoreCard
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1228,7 +1172,7 @@ export default function FormulaMagicStage() {
             <TipItem>• <strong>12</strong> ↔ <strong>21</strong>：十个位交换</TipItem>
             <TipItem>• 12 + 21 = <strong>33</strong></TipItem>
           </TipCard>
-        </LeftPanel>
+        </LeftPanel> */}
 
         {/* 中间 - 魔法台 */}
         <CenterPanel ref={centerPanelRef}>

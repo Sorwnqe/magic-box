@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
@@ -26,11 +26,36 @@ interface MagicEndingProps {
 }
 
 export default function MagicEnding({ onRestart }: MagicEndingProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isMuted, setIsMuted] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+
   useEffect(() => { playSuccess() }, [])
+
+  const togglePlay = () => {
+    if (!videoRef.current) return
+    if (isPlaying) {
+      videoRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
+    }
+  }
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const next = !isMuted
+      videoRef.current.muted = next
+      setIsMuted(next)
+      if (!next && !isPlaying) {
+        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {})
+      }
+    }
+  }
 
   return (
     <Container>
-      {/* 密室背景 */}
+      {/* 魔法背景 */}
       <BackgroundGradient />
       
       {/* 粒子效果 */}
@@ -83,25 +108,34 @@ export default function MagicEnding({ onRestart }: MagicEndingProps) {
                 <GiTreasureMap />
               </DecorKeyRight>
 
-              <PreviewCard
-                initial={{ scale: 0.8, y: 30 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 12 }}
+              <VideoCard
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 14 }}
               >
-                <PreviewTitle>
-                  🌟 更多密室谜题等你来挑战！
-                </PreviewTitle>
+                <VideoContainer>
+                  <VideoPlayer
+                    ref={videoRef}
+                    src="/video/mofaleyuan.mp4"
+                    loop
+                    playsInline
+                  />
+                </VideoContainer>
+                <PlayPauseButton onClick={togglePlay}>
+                  {isPlaying ? '⏸ 暂停' : '▶ 播放'}
+                </PlayPauseButton>
+                <SoundButton onClick={toggleMute}>
+                  {isMuted ? '🔇 开启声音' : '🔊 声音已开'}
+                </SoundButton>
+              </VideoCard>
 
-                <PreviewText>敬请期待...</PreviewText>
-
-                <RestartButton
-                  onClick={onRestart}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  🔄 再来一次
-                </RestartButton>
-              </PreviewCard>
+              <RestartButton
+                onClick={onRestart}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🔄 再来一次
+              </RestartButton>
             </PreviewPhase>
       </ContentWrapper>
     </Container>
@@ -216,33 +250,79 @@ const DecorKeyRight = styled(motion.div)`
   animation-delay: 0.5s;
 `
 
-const PreviewCard = styled(motion.div)`
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
-  border: 2px solid ${COLORS.purpleLight};
-  border-radius: 30px;
-  padding: 40px 80px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  text-align: center;
+const VideoCard = styled(motion.div)`
   z-index: 10;
-  max-width: 600px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 3px solid ${COLORS.gold}44;
 `
 
-const PreviewTitle = styled.h1`
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 0 0 12px;
-  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+const VideoContainer = styled.div`
+  height: 72vh;
+  max-height: 680px;
+  width: auto;
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  border-radius: 16px;
 `
 
-const PreviewText = styled.p`
-  font-size: 1.2rem;
-  color: ${COLORS.purpleLight};
-  margin-bottom: 25px;
+const VideoPlayer = styled.video`
+  height: 100%;
+  width: auto;
+  display: block;
+`
+
+const PlayPauseButton = styled.button`
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+`
+
+const SoundButton = styled.button`
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
 `
 
 const RestartButton = styled(motion.button)`
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 15px 40px;
   background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.purple} 100%);
   color: white;
@@ -252,4 +332,5 @@ const RestartButton = styled(motion.button)`
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
+  z-index: 20;
 `

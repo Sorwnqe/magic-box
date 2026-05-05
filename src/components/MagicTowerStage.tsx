@@ -7,7 +7,7 @@ import {
   GiOpenGate,
   GiKey,
   GiSparkles,
-  GiCastle
+  // GiCastle
 } from 'react-icons/gi'
 import { 
   FaStar,
@@ -972,28 +972,17 @@ const HeaderContent = styled.div`
   gap: 6px;
 `
 
-const StageTag = styled.div`
-  display: inline-block;
-  padding: 4px 14px;
-  background: linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldLight});
-  color: white;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  box-shadow: 0 3px 10px rgba(251, 191, 36, 0.4);
-`
-
-const Title = styled.h1`
-  font-size: 1.6rem;
-  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-`
+// const Title = styled.h1`
+//   font-size: 1.6rem;
+//   background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
+//   -webkit-background-clip: text;
+//   -webkit-text-fill-color: transparent;
+//   margin: 0;
+//   display: flex;
+//   align-items: center;
+//   gap: 8px;
+//   font-weight: 800;
+// `
 
 const SubtitleText = styled.p`
   color: ${COLORS.purpleLight};
@@ -1552,12 +1541,12 @@ export default function MagicTowerStage({ onComplete }: Props) {
         transition={{ duration: 0.5 }}
       >
         <HeaderContent>
-          <StageTag>🏆 第三关</StageTag>
-          <Title>
+          {/* <StageTag>🏆 第三关</StageTag> */}
+          {/* <Title>
             <GiCastle size={22} />
             算式创造关
             <GiCastle size={22} />
-          </Title>
+          </Title> */}
           <SubtitleText>找出所有和为 99 的反转数对，解锁密室最终宝藏！</SubtitleText>
         </HeaderContent>
       </Header>

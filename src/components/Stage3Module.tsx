@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
-import { HiSparkles } from 'react-icons/hi2'
+
 import { GiMagicSwirl } from 'react-icons/gi'
 import { playClick } from '../hooks/useSound'
 
@@ -20,19 +20,17 @@ const COLORS = {
 interface Stage3ModuleProps {
   targetSum?: 44 | 99   // 不传则只显示标题
   title?: string
-  tagLabel?: string
   onContinue: () => void
   onBack?: () => void
 }
 
-export default function Stage3Module({ targetSum, title, tagLabel, onContinue, onBack }: Stage3ModuleProps) {
+export default function Stage3Module({ targetSum, title, onContinue, onBack }: Stage3ModuleProps) {
   const handleContinue = () => {
     playClick()
     onContinue()
   }
 
   const displayTitle = title ?? '算式创造关'
-  const displayTagLabel = tagLabel ?? displayTitle
 
   return (
     <Container>
@@ -52,14 +50,6 @@ export default function Stage3Module({ targetSum, title, tagLabel, onContinue, o
       </ParticleLayer>
 
       <ContentWrapper>
-        <ModuleTag
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <HiSparkles /> {displayTagLabel} <HiSparkles />
-        </ModuleTag>
-
         <MainTitle
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -162,20 +152,6 @@ const ContentWrapper = styled.div`
   justify-content: center;
   gap: 28px;
   padding: 40px;
-`
-
-const ModuleTag = styled(motion.div)`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 28px;
-  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
-  color: white;
-  border-radius: 30px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  box-shadow: 0 5px 20px rgba(79, 70, 229, 0.5);
-  svg { font-size: 1.1rem; }
 `
 
 const MainTitle = styled(motion.h1)`

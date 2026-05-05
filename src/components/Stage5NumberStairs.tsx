@@ -117,8 +117,7 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <StageTag><HiSparkles /> 第五关</StageTag>
-          <Title>数字楼梯</Title>
+          <Title>连续递增的算式</Title>
           <StepIndicator>
             <StepDot active={step >= 0} />
             <StepLine active={step >= 1} />
@@ -370,20 +369,6 @@ const HeaderRow = styled(motion.div)`
   gap: 20px;
   flex-wrap: wrap;
   justify-content: center;
-`
-
-const StageTag = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 24px;
-  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
-  color: white;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 800;
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.45);
-  svg { font-size: 1rem; }
 `
 
 const Title = styled.h1`

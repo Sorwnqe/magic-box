@@ -50,7 +50,7 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <StageTag><HiSparkles /> 侦探拓展任务</StageTag>
+          <StageTag><HiSparkles /> 拓展任务</StageTag>
         </HeaderRow>
 
         {/* 主卡片 */}
@@ -69,15 +69,8 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
           <TaskTitle>创造你自己的谜题！</TaskTitle>
 
           <TaskDesc>
-            运用今天学到的<Highlight>反转数</Highlight>知识，<br />
-            设计一道<Highlight>有趣的算式</Highlight>谜题，<br />
-            回家后考考你的<Accent>家人</Accent>或<Accent>同桌</Accent>。
+            用<Highlight>反转数</Highlight>知识设计一道<Highlight>有趣算式</Highlight>，考考家人或同学！
           </TaskDesc>
-
-          <HintBox>
-            <HintRow><HiSparkles /> 例如：把算式中某个数字盖住，让对方猜答案</HintRow>
-            <HintRow><HiSparkles /> 也可以问：12 + 21 = ？，你还能找到几个类似的？</HintRow>
-          </HintBox>
         </TaskCard>
 
         {/* 按钮 */}
@@ -226,33 +219,6 @@ const TaskDesc = styled.p`
 const Highlight = styled.span`
   color: ${COLORS.goldLight};
   font-weight: 900;
-`
-
-const Accent = styled.span`
-  color: ${COLORS.purpleLight};
-  font-weight: 900;
-`
-
-const HintBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px 24px;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  border-radius: 14px;
-  width: 100%;
-`
-
-const HintRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: ${COLORS.purpleLight};
-
-  svg { color: ${COLORS.goldLight}; flex-shrink: 0; }
 `
 
 const ButtonRow = styled(motion.div)`
