@@ -375,30 +375,6 @@ const HeaderRow = styled(motion.div)`
   justify-content: center;
 `
 
-const StageTag = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 24px;
-  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
-  color: white;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: 800;
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.45);
-  svg { font-size: 1rem; }
-`
-
-const Title = styled.h1`
-  font-size: 2.4rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-  letter-spacing: 0.08em;
-`
-
 const StepIndicator = styled.div`
   display: flex;
   align-items: center;

@@ -32,7 +32,7 @@ interface Stage3GroupWorkProps {
 export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkProps) {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS)
   const [isRunning, setIsRunning] = useState(false)
-  const [revealStep, setRevealStep] = useState(1) // 1=显示合作要求
+  const [revealStep] = useState(1) // 1=显示合作要求
 
   useEffect(() => {
     if (!isRunning || secondsLeft <= 0) return
@@ -360,15 +360,6 @@ const Item = styled.div`
   display: flex;
   gap: 10px;
   align-items: flex-start;
-`
-
-const ItemNum = styled.span`
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: ${COLORS.purpleLight};
-  min-width: 22px;
-  flex-shrink: 0;
-  padding-top: 1px;
 `
 
 const ItemText = styled.span`

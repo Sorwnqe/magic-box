@@ -84,7 +84,7 @@ const COLORS = {
 
 export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [videoEnded, setVideoEnded] = useState(false)
+  // const [videoEnded, setVideoEnded] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
   }, [])
 
   const handleVideoEnd = () => {
-    setVideoEnded(true)
+    // setVideoEnded(true)
     setIsPlaying(false)
   }
 
@@ -104,7 +104,7 @@ export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
     } else {
       videoRef.current.play().catch(() => {})
       setIsPlaying(true)
-      setVideoEnded(false)
+      // setVideoEnded(false)
     }
   }
 
@@ -113,7 +113,7 @@ export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
     videoRef.current.currentTime = 0
     videoRef.current.play().catch(() => {})
     setIsPlaying(true)
-    setVideoEnded(false)
+    // setVideoEnded(false)
   }
 
   const handleBack = () => {

@@ -25,7 +25,7 @@ interface Stage3ModuleProps {
   onBack?: () => void
 }
 
-export default function Stage3Module({ targetSum, title, tagLabel, onContinue, onBack }: Stage3ModuleProps) {
+export default function Stage3Module({ targetSum, onContinue, onBack }: Stage3ModuleProps) {
   const handleContinue = () => {
     playClick()
     onContinue()
