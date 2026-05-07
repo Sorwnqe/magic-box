@@ -59,10 +59,10 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
             <GiMagnifyingGlass />
           </IconArea>
 
-          <TaskTitle>创造你自己的谜题！</TaskTitle>
+          <TaskTitle>思考</TaskTitle>
 
           <TaskDesc>
-            用反转数知识设计一道有趣算式，考考家人或同学！
+            淘气的年龄反过来就是奶奶的年龄，他两的年龄合起来是77岁，猜一猜淘气多少岁？
           </TaskDesc>
         </TaskCard>
 
@@ -201,7 +201,7 @@ const TaskTitle = styled.h1`
 `
 
 const TaskDesc = styled.p`
-  font-size: 1.35rem;
+  font-size: 1.6rem;
   font-weight: 600;
   color: ${COLORS.textPrimary};
   text-align: center;
