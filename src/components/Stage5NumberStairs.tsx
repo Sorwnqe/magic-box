@@ -5,6 +5,7 @@ import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
 import { HiSparkles } from 'react-icons/hi2'
 import { playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -46,7 +47,10 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 })
 
   useLayoutEffect(() => {
-    if (step < 2) { setPoints([]); return }
+    if (step < 2) {
+      requestAnimationFrame(() => setPoints([]))
+      return
+    }
     const wrapper = wrapperRef.current
     if (!wrapper) return
     const box = wrapper.getBoundingClientRect()
@@ -95,6 +99,7 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
 
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>
@@ -111,13 +116,12 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
       </ParticleLayer>
 
       <ContentWrapper>
-        {/* 单行标题 */}
+        {/* 步骤指示器 */}
         <HeaderRow
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Title>连续递增的算式</Title>
           <StepIndicator>
             <StepDot active={step >= 0} />
             <StepLine active={step >= 1} />
@@ -371,6 +375,20 @@ const HeaderRow = styled(motion.div)`
   justify-content: center;
 `
 
+const StageTag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 24px;
+  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
+  color: white;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.45);
+  svg { font-size: 1rem; }
+`
+
 const Title = styled.h1`
   font-size: 2.4rem;
   font-weight: 900;
@@ -443,13 +461,13 @@ const EqRow = styled.div<{ indent: number }>`
 `
 
 const NumBox = styled(motion.div)<{ highlight: boolean }>`
-  min-width: 60px;
-  height: 48px;
+  min-width: 76px;
+  height: 58px;
   padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 900;
   border-radius: 12px;
   color: ${props => props.highlight ? '#fff' : COLORS.textPrimary};
@@ -462,21 +480,21 @@ const NumBox = styled(motion.div)<{ highlight: boolean }>`
 `
 
 const OpText = styled.span`
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: ${COLORS.textSecondary};
-  width: 20px;
+  width: 28px;
   text-align: center;
 `
 
 const BracketBox = styled(motion.div)<{ filled: boolean }>`
-  min-width: 74px;
-  height: 48px;
+  min-width: 90px;
+  height: 58px;
   padding: 0 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 900;
   border-radius: 12px;
   border: 2px dashed ${props => props.filled ? COLORS.gold : COLORS.purpleLight};
@@ -484,8 +502,8 @@ const BracketBox = styled(motion.div)<{ filled: boolean }>`
   color: ${COLORS.goldLight};
   position: relative;
 
-  &::before { content: '('; position: absolute; left: 8px; color: ${COLORS.purpleLight}; font-size: 1.5rem; font-weight: 700; }
-  &::after  { content: ')'; position: absolute; right: 8px; color: ${COLORS.purpleLight}; font-size: 1.5rem; font-weight: 700; }
+  &::before { content: '('; position: absolute; left: 8px; color: ${COLORS.purpleLight}; font-size: 1.8rem; font-weight: 700; }
+  &::after  { content: ')'; position: absolute; right: 8px; color: ${COLORS.purpleLight}; font-size: 1.8rem; font-weight: 700; }
 `
 
 const FooterRow = styled.div`

@@ -5,6 +5,7 @@ import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
 import { HiSparkles } from 'react-icons/hi2'
 import { GiMagnifyingGlass } from 'react-icons/gi'
 import { playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -28,6 +29,7 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
 
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>
@@ -44,15 +46,6 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
       </ParticleLayer>
 
       <ContentWrapper>
-        {/* 顶部标签 */}
-        <HeaderRow
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <StageTag><HiSparkles /> 拓展任务</StageTag>
-        </HeaderRow>
-
         {/* 主卡片 */}
         <TaskCard
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -69,7 +62,7 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
           <TaskTitle>创造你自己的谜题！</TaskTitle>
 
           <TaskDesc>
-            用<Highlight>反转数</Highlight>知识设计一道<Highlight>有趣算式</Highlight>，考考家人或同学！
+            用反转数知识设计一道有趣算式，考考家人或同学！
           </TaskDesc>
         </TaskCard>
 
@@ -219,6 +212,33 @@ const TaskDesc = styled.p`
 const Highlight = styled.span`
   color: ${COLORS.goldLight};
   font-weight: 900;
+`
+
+const Accent = styled.span`
+  color: ${COLORS.purpleLight};
+  font-weight: 900;
+`
+
+const HintBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 14px;
+  width: 100%;
+`
+
+const HintRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: ${COLORS.purpleLight};
+
+  svg { color: ${COLORS.goldLight}; flex-shrink: 0; }
 `
 
 const ButtonRow = styled(motion.div)`

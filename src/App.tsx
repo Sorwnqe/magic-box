@@ -295,7 +295,7 @@ function App() {
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
-            <MagicEnding onRestart={goTo('waiting', 'left')} />
+            <MagicEnding onRestart={goTo('waiting', 'left')} onBack={goTo('stage6_detective', 'left')} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -314,9 +314,9 @@ function StageNavigation({
   onNext: () => void
 }) {
   const stages = [
-    { id: 1, label: '1', name: '数字解码关' },
-    { id: 2, label: '2', name: '算式探秘关' },
-    { id: 3, label: '3', name: '算式创造关' },
+    { id: 1, label: '1', name: '数字魔法' },
+    { id: 2, label: '2', name: '✍仿写算式' },
+    { id: 3, label: '3', name: '有趣算式' },
     { id: 4, label: '4', name: '侦探能量操' }
   ]
 

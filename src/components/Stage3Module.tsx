@@ -2,9 +2,9 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
-
 import { GiMagicSwirl } from 'react-icons/gi'
 import { playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -20,20 +20,23 @@ const COLORS = {
 interface Stage3ModuleProps {
   targetSum?: 44 | 99   // 不传则只显示标题
   title?: string
+  tagLabel?: string
   onContinue: () => void
   onBack?: () => void
 }
 
-export default function Stage3Module({ targetSum, title, onContinue, onBack }: Stage3ModuleProps) {
+export default function Stage3Module({ targetSum, title, tagLabel, onContinue, onBack }: Stage3ModuleProps) {
   const handleContinue = () => {
     playClick()
     onContinue()
   }
 
-  const displayTitle = title ?? '算式创造关'
+  // const displayTitle = title ?? '算式创造关'
+  // const displayTagLabel = tagLabel ?? displayTitle
 
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>
@@ -50,13 +53,7 @@ export default function Stage3Module({ targetSum, title, onContinue, onBack }: S
       </ParticleLayer>
 
       <ContentWrapper>
-        <MainTitle
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, type: 'spring', damping: 12 }}
-        >
-          {displayTitle}
-        </MainTitle>
+
 
         {targetSum !== undefined && (
           <ChallengeCard
@@ -68,7 +65,7 @@ export default function Stage3Module({ targetSum, title, onContinue, onBack }: S
               <GiMagicSwirl />
             </ChallengeIcon>
             <ChallengeMain>
-              写出和为 <SumHighlight>{targetSum}</SumHighlight> 的有趣算式
+              写出和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
             </ChallengeMain>
           </ChallengeCard>
         )}
@@ -154,22 +151,12 @@ const ContentWrapper = styled.div`
   padding: 40px;
 `
 
-const MainTitle = styled(motion.h1)`
-  font-size: 4rem;
-  font-weight: 900;
-  background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.gold} 60%, ${COLORS.accent} 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
-  letter-spacing: 0.15em;
-`
-
 const ChallengeCard = styled(motion.div)`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 32px 60px;
+  padding: 40px 72px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
   border: 2px solid ${COLORS.purpleLight};
   border-radius: 24px;
@@ -184,7 +171,7 @@ const ChallengeIcon = styled.div`
 `
 
 const ChallengeMain = styled.div`
-  font-size: 2rem;
+  font-size: 2.4rem;
   font-weight: 800;
   color: ${COLORS.textPrimary};
   text-align: center;
@@ -192,11 +179,17 @@ const ChallengeMain = styled.div`
 `
 
 const SumHighlight = styled.span`
-  font-size: 2.8rem;
+  font-size: 3.2rem;
   font-weight: 900;
   color: ${COLORS.gold};
   text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
   padding: 0 6px;
+`
+
+const YellowHighlight = styled.span`
+  background: linear-gradient(180deg, transparent 60%, rgba(251, 191, 36, 0.35) 60%);
+  padding: 0 4px;
+  border-radius: 4px;
 `
 
 const ButtonRow = styled.div`

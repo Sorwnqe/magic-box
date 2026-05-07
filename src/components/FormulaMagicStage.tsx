@@ -5,6 +5,7 @@ import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
 
 import { playPop, playClick, playSuccess, playError } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 // 密室侦探主题配色
 const COLORS = {
@@ -113,19 +114,11 @@ interface ResultAnimation {
 
 // 结果文字
 const CORRECT_MESSAGES = [
-  '太厉害了！🎉',
-  '完美！你真棒！✨',
-  '答对啦！继续加油！🌟',
-  '厉害厉害！数学小天才！🏆',
   '正确！你掌握规律了！💪'
 ]
 
 const WRONG_MESSAGES = [
-  '没关系，再试一次！💪',
-  '加油！你可以的！🌈',
-  '别灰心，检查一下~😊',
   '差一点点，再想想！✨',
-  '仔细看看规律哦~🔍'
 ]
 
 const pulseGlow = keyframes`
@@ -675,12 +668,12 @@ export default function FormulaMagicStage() {
       if (resultAnim.formulaAlpha > 0 && resultFormulaRef.current) {
         ctx.save()
         ctx.globalAlpha = resultAnim.formulaAlpha
-        ctx.translate(centerX, centerY - 90)
+        ctx.translate(centerX, centerY - 100)
         ctx.scale(resultAnim.formulaScale, resultAnim.formulaScale)
 
         // 算式背景框
-        const formulaWidth = 200
-        const formulaHeight = 50
+        const formulaWidth = 360
+        const formulaHeight = 80
         ctx.fillStyle = resultAnim.type === 'correct'
           ? 'rgba(220, 252, 231, 0.95)'
           : 'rgba(254, 242, 242, 0.95)'
@@ -692,7 +685,7 @@ export default function FormulaMagicStage() {
         ctx.shadowBlur = 0
 
         // 算式文字
-        ctx.font = 'bold 24px "Nunito", sans-serif'
+        ctx.font = 'bold 44px "Nunito", sans-serif'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillStyle = resultAnim.type === 'correct' ? COLORS.green : '#ef4444'
@@ -704,11 +697,11 @@ export default function FormulaMagicStage() {
       if (resultAnim.textAlpha > 0 && resultMessageRef.current) {
         ctx.save()
         ctx.globalAlpha = resultAnim.textAlpha
-        ctx.font = 'bold 26px "Nunito", sans-serif'
+        ctx.font = 'bold 40px "Nunito", sans-serif'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
 
-        const textY = centerY + 75 + resultAnim.textY
+        const textY = centerY + 115 + resultAnim.textY
 
         if (resultAnim.type === 'correct') {
           ctx.fillStyle = COLORS.green
@@ -1118,6 +1111,8 @@ export default function FormulaMagicStage() {
   return (
     <Container>
 
+      <MysticBackground />
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>

@@ -6,6 +6,7 @@ import { GiTreasureMap, GiCrown, GiTrophyCup } from 'react-icons/gi'
 import { IoChevronForward } from 'react-icons/io5'
 import { HiSparkles } from 'react-icons/hi2'
 import { playSuccess, playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -35,6 +36,19 @@ const FORMULAS_99 = [
   { a: 45, b: 54, result: 99 },
 ]
 
+const PARTICLE_POSITIONS = [
+  { left: 12, top: 8, delay: 0 }, { left: 45, top: 15, delay: 0.5 }, { left: 78, top: 5, delay: 1 },
+  { left: 25, top: 35, delay: 1.5 }, { left: 65, top: 28, delay: 2 }, { left: 90, top: 42, delay: 0.3 },
+  { left: 5, top: 55, delay: 0.8 }, { left: 38, top: 62, delay: 1.3 }, { left: 72, top: 58, delay: 1.8 },
+  { left: 15, top: 78, delay: 2.3 }, { left: 55, top: 85, delay: 0.2 }, { left: 88, top: 75, delay: 0.7 },
+  { left: 30, top: 22, delay: 1.2 }, { left: 60, top: 45, delay: 1.7 }, { left: 82, top: 30, delay: 2.2 },
+  { left: 8, top: 42, delay: 2.5 }, { left: 48, top: 72, delay: 0.4 }, { left: 75, top: 88, delay: 0.9 },
+  { left: 20, top: 92, delay: 1.4 }, { left: 52, top: 10, delay: 1.9 }, { left: 95, top: 65, delay: 2.4 },
+  { left: 35, top: 50, delay: 0.1 }, { left: 68, top: 18, delay: 0.6 }, { left: 3, top: 68, delay: 1.1 },
+  { left: 42, top: 38, delay: 1.6 }, { left: 80, top: 52, delay: 2.1 }, { left: 18, top: 25, delay: 2.6 },
+  { left: 58, top: 80, delay: 0.35 }, { left: 85, top: 12, delay: 0.85 }, { left: 10, top: 48, delay: 1.35 },
+]
+
 export default function FormulaShowcase({ onContinue }: FormulaShowcaseProps) {
   const [visibleCount, setVisibleCount] = useState(0)
   const [showChest, setShowChest] = useState(false)
@@ -61,17 +75,18 @@ export default function FormulaShowcase({ onContinue }: FormulaShowcaseProps) {
 
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
       
       {/* 粒子背景 */}
       <ParticleLayer>
-        {Array.from({ length: 30 }).map((_, i) => (
+        {PARTICLE_POSITIONS.map((p, i) => (
           <Particle
             key={i}
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
+              left: `${p.left}%`,
+              top: `${p.top}%`,
+              animationDelay: `${p.delay}s`,
             }}
           />
         ))}
@@ -85,7 +100,7 @@ export default function FormulaShowcase({ onContinue }: FormulaShowcaseProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <HiSparkles /> 和为99的有趣算式 <HiSparkles />
+            <HiSparkles /> 和为99的<YellowHighlight>有趣算式</YellowHighlight> <HiSparkles />
           </Title>
 
           <FormulasContainer>
@@ -222,7 +237,7 @@ const ContentWrapper = styled.div`
   align-items: center;
   justify-content: center;
   gap: 60px;
-  padding: 30px 50px;
+  padding: 40px 60px;
 `
 
 const LeftSection = styled.div`
@@ -243,7 +258,7 @@ const Title = styled(motion.h1)`
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 900;
   background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.accentLight} 100%);
   -webkit-background-clip: text;
@@ -267,13 +282,13 @@ const FormulasContainer = styled.div`
 const FormulaRow = styled(motion.div)`
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 24px;
+  gap: 14px;
+  padding: 14px 32px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
   border: 2px solid ${COLORS.purpleLight};
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 800;
 `
 
@@ -393,6 +408,12 @@ const SuccessText = styled.p`
   margin: 0;
   line-height: 1.5;
   text-align: center;
+`
+
+const YellowHighlight = styled.span`
+  background: linear-gradient(180deg, transparent 60%, rgba(251, 191, 36, 0.35) 60%);
+  padding: 0 4px;
+  border-radius: 4px;
 `
 
 const ContinueButton = styled(motion.button)`

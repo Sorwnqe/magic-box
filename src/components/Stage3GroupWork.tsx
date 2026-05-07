@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack, IoTimeOutline } from 'react-icons/io5'
 import { HiSparkles } from 'react-icons/hi2'
 import { playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -21,7 +22,7 @@ const COLORS = {
   textSecondary: '#94a3b8',
 }
 
-const TOTAL_SECONDS = 120 // 2 minutes
+const TOTAL_SECONDS = 90 // 1.5 minutes
 
 interface Stage3GroupWorkProps {
   onContinue: () => void
@@ -30,8 +31,8 @@ interface Stage3GroupWorkProps {
 
 export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkProps) {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS)
-  const [isRunning, setIsRunning] = useState(true)
-
+  const [isRunning, setIsRunning] = useState(false)
+  const [revealStep, setRevealStep] = useState(1) // 1=显示合作要求
 
   useEffect(() => {
     if (!isRunning || secondsLeft <= 0) return
@@ -50,13 +51,27 @@ export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkP
   const expired = secondsLeft === 0
 
 
-  const handleContinue = () => {
+  const handleStartPause = () => {
+    playClick()
+    setIsRunning(prev => !prev)
+  }
+
+  const handleReset = () => {
+    playClick()
+    setIsRunning(false)
+    setSecondsLeft(TOTAL_SECONDS)
+  }
+
+  const handleRevealButton = () => {
     playClick()
     onContinue()
   }
 
+  const btnLabel = '继续探索'
+
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>
@@ -79,6 +94,22 @@ export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkP
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
+          <TimerControls>
+            <ControlButton
+              onClick={handleStartPause}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isRunning ? '⏸ 暂停' : '▶ 开始'}
+            </ControlButton>
+            <ControlButton
+              onClick={handleReset}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ↺ 重置
+            </ControlButton>
+          </TimerControls>
           <TimerIcon expired={expired}>
             <IoTimeOutline />
           </TimerIcon>
@@ -94,29 +125,36 @@ export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkP
           <TimerLabel>{expired ? '⏰ 时间到！' : '小组合作时间'}</TimerLabel>
         </TimerSection>
 
-        {/* 合作要求 */}
+        {/* 逐步揭示的文字块 */}
         <RequirementsArea>
-          <RequirementBlock
-            color={COLORS.gold}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: 'spring', damping: 15 }}
-          >
-            <BlockHeader color={COLORS.gold}>
-              <HiSparkles /> 小组合作要求
-            </BlockHeader>
-            <ItemList>
-              {[
-                '一号同学：检查算式是不是有趣算式。',
-                '二号同学：说说自己找算式的方法。',
-                '全体组员：互相补充，补齐漏掉的算式。',
-              ].map((text, i) => (
-                <Item key={i}>
-                  <ItemText>{text}</ItemText>
-                </Item>
-              ))}
-            </ItemList>
-          </RequirementBlock>
+          <AnimatePresence>
+            {revealStep >= 1 && (
+              <RequirementBlock
+                key="collab"
+                color={COLORS.purple}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', damping: 15 }}
+              >
+                <BlockHeader color={COLORS.purple}>
+                  <HiSparkles /> 小组合作要求
+                </BlockHeader>
+                <ItemList>
+                  {[
+                    '一号同学：检查算式是不是有趣算式。',
+                    '二号同学：说说自己找算式的方法。',
+                    '全体组员：互相补充，补齐漏掉的算式。',
+                  ].map((text, i) => (
+                    <Item key={i}>
+                      <ItemText>{text}</ItemText>
+                    </Item>
+                  ))}
+                </ItemList>
+              </RequirementBlock>
+            )}
+
+          </AnimatePresence>
         </RequirementsArea>
 
         {/* 按钮行 */}
@@ -139,9 +177,9 @@ export default function Stage3GroupWork({ onContinue, onBack }: Stage3GroupWorkP
             transition={{ delay: 0.5 }}
             whileHover={{ scale: 1.05, y: -3 }}
             whileTap={{ scale: 0.97 }}
-            onClick={handleContinue}
+            onClick={handleRevealButton}
           >
-            <span>继续探索</span>
+            <span>{btnLabel}</span>
             <IoChevronForward />
           </ContinueButton>
         </ButtonRow>
@@ -205,8 +243,8 @@ const ContentWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 30px 50px;
+  gap: 20px;
+  padding: 20px 40px;
 `
 
 const TimerSection = styled(motion.div)`
@@ -217,13 +255,13 @@ const TimerSection = styled(motion.div)`
 `
 
 const TimerIcon = styled.div<{ expired: boolean }>`
-  font-size: 2rem;
+  font-size: 1.4rem;
   color: ${props => props.expired ? '#ef4444' : COLORS.purpleLight};
   ${props => props.expired ? `animation: ${pulseRed} 1s ease-in-out infinite;` : ''}
 `
 
 const TimerDisplay = styled.div<{ expired: boolean }>`
-  font-size: 4rem;
+  font-size: 2.5rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   color: ${props => props.expired ? '#ef4444' : COLORS.goldLight};
@@ -233,8 +271,8 @@ const TimerDisplay = styled.div<{ expired: boolean }>`
 `
 
 const ProgressBar = styled.div`
-  width: 300px;
-  height: 8px;
+  width: 220px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
@@ -250,41 +288,66 @@ const ProgressFill = styled.div<{ expired: boolean }>`
 `
 
 const TimerLabel = styled.div`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: ${COLORS.textSecondary};
 `
 
+const TimerControls = styled.div`
+  display: flex;
+  gap: 24px;
+  margin-top: 4px;
+`
+
+const ControlButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: ${COLORS.goldLight};
+  background: rgba(251, 191, 36, 0.1);
+  border: 2px solid ${COLORS.gold};
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(251, 191, 36, 0.2);
+  }
+`
+
 const RequirementsArea = styled.div`
   display: flex;
-  justify-content: center;
+  gap: 24px;
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
+  min-height: 180px;
+  align-items: flex-start;
 `
 
 const RequirementBlock = styled(motion.div)<{ color: string }>`
-  width: 100%;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
-  border: 3px solid ${props => props.color};
-  border-radius: 24px;
-  padding: 32px 40px;
-  box-shadow: 0 0 40px ${props => props.color}44, 0 10px 40px rgba(0,0,0,0.3);
+  flex: 1;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
+  border: 2px solid ${props => props.color}44;
+  border-radius: 20px;
+  padding: 48px 64px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 `
 
 const BlockHeader = styled.div<{ color: string }>`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 1.4rem;
-  font-weight: 900;
+  gap: 8px;
+  font-size: 1.8rem;
+  font-weight: 800;
   color: ${props => props.color};
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid ${props => props.color}66;
-  text-shadow: 0 0 20px ${props => props.color}66;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid ${props => props.color}33;
 
-  svg { font-size: 1.3rem; }
+  svg { font-size: 1.1rem; }
 `
 
 const ItemList = styled.div`
@@ -295,17 +358,24 @@ const ItemList = styled.div`
 
 const Item = styled.div`
   display: flex;
-  align-items: center;
-  padding: 14px 20px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  gap: 10px;
+  align-items: flex-start;
+`
+
+const ItemNum = styled.span`
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: ${COLORS.purpleLight};
+  min-width: 22px;
+  flex-shrink: 0;
+  padding-top: 1px;
 `
 
 const ItemText = styled.span`
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.6rem;
+  font-weight: 600;
   color: ${COLORS.textPrimary};
-  line-height: 1.6;
+  line-height: 1.8;
 `
 
 const ButtonRow = styled.div`

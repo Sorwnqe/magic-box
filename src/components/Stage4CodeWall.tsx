@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
-
+import { HiSparkles } from 'react-icons/hi2'
 import { playClick } from '../hooks/useSound'
+import MysticBackground from './MysticBackground'
 
 const COLORS = {
   primary: '#4f46e5',
@@ -31,7 +32,7 @@ function makeRow(i: number) {
   }
 }
 
-const ROWS = Array.from({ length: 6 }, (_, i) => makeRow(i + 1))
+const ROWS = Array.from({ length: 8 }, (_, i) => makeRow(i + 1))
 
 interface Props {
   onContinue: () => void
@@ -49,6 +50,7 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
 
   return (
     <Container>
+      <MysticBackground />
       <BackgroundGradient />
 
       <ParticleLayer>
@@ -65,15 +67,6 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
       </ParticleLayer>
 
       <ContentWrapper>
-        {/* 顶部一行标题 */}
-        <HeaderRow
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Title>数字交换和相等的算式</Title>
-        </HeaderRow>
-
         {/* 主体表格 */}
         <TableCard
           initial={{ opacity: 0, y: 20 }}
@@ -82,7 +75,7 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
         >
           <Columns>
             <Column>
-              <ColHeader color={COLORS.purple}>✦ 加法密码 ✦</ColHeader>
+              <ColHeader color={COLORS.purple}>✦ 有趣的加法算式 ✦</ColHeader>
               {ROWS.map((row, i) => (
                 <FormulaRow key={i}>
                   <NumCell
@@ -115,7 +108,7 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
             <ColumnDivider />
 
             <Column>
-              <ColHeader color={COLORS.gold}>✦ 减法密码 ✦</ColHeader>
+              <ColHeader color={COLORS.gold}>✦ 有趣的减法算式 ✦</ColHeader>
               {ROWS.map((row, i) => (
                 <FormulaRow key={i}>
                   <NumCell
@@ -248,6 +241,20 @@ const HeaderRow = styled(motion.div)`
   justify-content: center;
 `
 
+const StageTag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 24px;
+  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
+  color: white;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.45);
+  svg { font-size: 1rem; }
+`
+
 const Title = styled.h1`
   font-size: 2.4rem;
   font-weight: 900;
@@ -283,7 +290,7 @@ const Column = styled.div`
 `
 
 const ColHeader = styled.div<{ color: string }>`
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: ${props => props.color};
   text-align: center;
@@ -334,13 +341,13 @@ function NumCell({ hidden, revealed, baseText, revealText, delay }: {
 }
 
 const CellBox = styled.div<{ hidden?: boolean; revealed?: boolean }>`
-  min-width: 58px;
-  height: 46px;
+  min-width: 72px;
+  height: 56px;
   padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 900;
   border-radius: 10px;
   border: ${props => props.hidden ? `2px solid ${COLORS.gold}` : '2px solid transparent'};
@@ -355,9 +362,9 @@ const CellBox = styled.div<{ hidden?: boolean; revealed?: boolean }>`
 `
 
 const Op = styled.span`
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: ${COLORS.textSecondary};
-  width: 22px;
+  width: 28px;
   text-align: center;
   font-weight: 700;
 `

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from '@emotion/styled'
+import { keyframes } from '@emotion/react'
 import confetti from 'canvas-confetti'
 import { useMagicBox } from '../stores/useMagicBox'
-import { backgrounds } from '../assets/images'
+import MysticBackground from './MysticBackground'
 
 // 密室侦探主题配色
 const COLORS = {
@@ -23,93 +24,6 @@ const COLORS = {
 import { IoArrowDown, IoBackspace } from 'react-icons/io5'
 import { MdClear } from 'react-icons/md'
 import { playPop, playClick, playSuccess } from '../hooks/useSound'
-
-// 线性粒子背景
-function ParticleLines() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    const colors = ['#3b82f6', '#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b']
-    
-    interface Particle {
-      x: number; y: number; vx: number; vy: number
-      color: string; size: number
-    }
-    
-    const particles: Particle[] = []
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 1.2,
-        vy: (Math.random() - 0.5) * 1.2,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 3 + 1.5
-      })
-    }
-
-    let animationId: number
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i]
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j]
-          const dx = p1.x - p2.x
-          const dy = p1.y - p2.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          
-          if (dist < 180) {
-            ctx.beginPath()
-            ctx.moveTo(p1.x, p1.y)
-            ctx.lineTo(p2.x, p2.y)
-            const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y)
-            gradient.addColorStop(0, p1.color + '30')
-            gradient.addColorStop(1, p2.color + '30')
-            ctx.strokeStyle = gradient
-            ctx.lineWidth = 1.5
-            ctx.stroke()
-          }
-        }
-      }
-      
-      particles.forEach(p => {
-        p.x += p.vx
-        p.y += p.vy
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
-        
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = p.color + '60'
-        ctx.fill()
-      })
-      
-      animationId = requestAnimationFrame(animate)
-    }
-    animate()
-
-    return () => {
-      cancelAnimationFrame(animationId)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-
-  return <ParticleCanvas ref={canvasRef} />
-}
 
 // 魔法粒子类型
 interface MagicParticle {
@@ -716,8 +630,20 @@ export default function MagicMainApp() {
 
   return (
     <Container>
-      <Bg />
-      <ParticleLines />
+      <MysticBackground />
+      <BackgroundGradient />
+      <ParticleLayer>
+        {Array.from({ length: 20 }).map((_, i) => (
+          <Particle
+            key={i}
+            style={{
+              left: `${(i * 17 + 7) % 100}%`,
+              top: `${(i * 23 + 11) % 100}%`,
+              animationDelay: `${(i * 0.3) % 3}s`,
+            }}
+          />
+        ))}
+      </ParticleLayer>
       
       {/* 全屏魔法动画Canvas - 必须在最外层 */}
       <FullscreenCanvas>
@@ -803,11 +729,35 @@ export default function MagicMainApp() {
 }
 
 // ========== Styles ==========
-const ParticleCanvas = styled.canvas`
-  position: fixed;
+
+const BackgroundGradient = styled.div`
+  position: absolute;
   inset: 0;
-  pointer-events: none;
-  z-index: 1;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(79, 70, 229, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(251, 191, 36, 0.2) 0%, transparent 50%),
+    linear-gradient(135deg, ${COLORS.bgDark} 0%, #1e1b4b 100%);
+`
+
+const ParticleLayer = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+`
+
+const sparkleAnim = keyframes`
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+`
+
+const Particle = styled.div`
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: ${COLORS.purpleLight};
+  border-radius: 50%;
+  box-shadow: 0 0 10px ${COLORS.purple};
+  animation: ${sparkleAnim} 3s ease-in-out infinite;
 `
 
 // 和2、3关一致的布局结构
@@ -820,18 +770,6 @@ const Container = styled.div`
   overflow: hidden;
 `
 
-const Bg = styled.div`
-  position: fixed;
-  inset: 0;
-  background: url(${backgrounds.mysticAlley}) center/cover;
-  z-index: 0;
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(79, 70, 229, 0.4));
-  }
-`
 
 const Header = styled.div`
   text-align: center;
@@ -1087,3 +1025,5 @@ const Toast = styled(motion.div)`
   box-shadow: 0 8px 30px rgba(0,0,0,0.2);
   z-index: 1000;
 `
+
+
