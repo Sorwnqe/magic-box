@@ -150,25 +150,6 @@ const ContentWrapper = styled.div`
   padding: 30px 40px;
 `
 
-const HeaderRow = styled(motion.div)`
-  display: flex;
-  align-items: center;
-`
-
-const StageTag = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 28px;
-  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
-  color: white;
-  border-radius: 30px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.5);
-  svg { font-size: 1.1rem; }
-`
-
 const TaskCard = styled(motion.div)`
   display: flex;
   flex-direction: column;
@@ -207,38 +188,6 @@ const TaskDesc = styled.p`
   text-align: center;
   line-height: 1.8;
   margin: 0;
-`
-
-const Highlight = styled.span`
-  color: ${COLORS.goldLight};
-  font-weight: 900;
-`
-
-const Accent = styled.span`
-  color: ${COLORS.purpleLight};
-  font-weight: 900;
-`
-
-const HintBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px 24px;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  border-radius: 14px;
-  width: 100%;
-`
-
-const HintRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: ${COLORS.purpleLight};
-
-  svg { color: ${COLORS.goldLight}; flex-shrink: 0; }
 `
 
 const ButtonRow = styled(motion.div)`
