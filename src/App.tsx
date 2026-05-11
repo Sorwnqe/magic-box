@@ -10,7 +10,7 @@ import MagicMainApp from './components/MagicMainApp'
 
 // import CongRevealPage from './components/CongRevealPage'
 import Stage3Module from './components/Stage3Module'
-import Stage3GroupWork from './components/Stage3GroupWork'
+// import Stage3GroupWork from './components/Stage3GroupWork'
 import Stage4CodeWall from './components/Stage4CodeWall'
 import Stage5NumberStairs from './components/Stage5NumberStairs'
 import Stage5Video from './components/Stage5Video'
@@ -145,29 +145,8 @@ function App() {
             <Stage3Module
               title="算式创造关"
               targetSum={44}
-              onContinue={goTo('stage3_module66')}
-              onBack={goTo('stage1_decode', 'left')}
-            />
-          </motion.div>
-        )}
-
-        {/* 第三关 - 和为66 */}
-        {appState === 'stage3_module66' && (
-          <motion.div
-            key="stage3_module66"
-            custom={direction}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <Stage3Module
-              title="思考：和为66的算式有哪些？"
-              targetSum={66}
               onContinue={goTo('stage3_module2')}
-              onBack={goTo('stage3_module1', 'left')}
+              onBack={goTo('stage1_decode', 'left')}
             />
           </motion.div>
         )}
@@ -187,27 +166,8 @@ function App() {
             <Stage3Module
               title="算式创造关"
               targetSum={99}
-              onContinue={goTo('stage3_group')}
-              onBack={goTo('stage3_module1', 'left')}
-            />
-          </motion.div>
-        )}
-
-        {/* 第三关 - 小组合作倒计时 */}
-        {appState === 'stage3_group' && (
-          <motion.div
-            key="stage3_group"
-            custom={direction}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <Stage3GroupWork
               onContinue={goTo('stage4_codewall')}
-              onBack={goTo('stage3_module2', 'left')}
+              onBack={goTo('stage3_module1', 'left')}
             />
           </motion.div>
         )}
@@ -226,7 +186,7 @@ function App() {
           >
             <Stage4CodeWall
               onContinue={goTo('stage5_stairs')}
-              onBack={goTo('stage3_group', 'left')}
+              onBack={goTo('stage3_module2', 'left')}
             />
           </motion.div>
         )}

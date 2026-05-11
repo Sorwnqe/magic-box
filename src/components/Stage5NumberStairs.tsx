@@ -152,60 +152,17 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                       <stop offset="60%" stopColor="#f97316" />
                       <stop offset="100%" stopColor="#ef4444" />
                     </linearGradient>
-                    <filter id="chainGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="6" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
                   </defs>
-                  {/* 底层发光光晕 */}
+                  {/* 主线 — 纯色 */}
                   <motion.path
                     d={pathD}
                     stroke="#fbbf24"
-                    strokeWidth={14}
-                    strokeOpacity={0.35}
+                    strokeWidth={5}
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    filter="url(#chainGlow)"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.7 }}
-                    transition={{ duration: 5, ease: 'easeInOut' }}
-                  />
-                  {/* 主线 */}
-                  <motion.path
-                    d={pathD}
-                    stroke="url(#chainGrad)"
-                    strokeWidth={6}
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#softGlow)"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 5, ease: 'easeInOut' }}
-                  />
-                  {/* 高光细线 */}
-                  <motion.path
-                    d={pathD}
-                    stroke="#ffffff"
-                    strokeWidth={1.5}
-                    strokeOpacity={0.85}
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.85 }}
                     transition={{ duration: 5, ease: 'easeInOut' }}
                   />
                   {points.map((p, i) => (
@@ -213,11 +170,10 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                       key={i}
                       cx={p.x}
                       cy={p.y}
-                      r={9}
+                      r={8}
                       fill="#fbbf24"
                       stroke="#fff"
                       strokeWidth={2}
-                      filter="url(#chainGlow)"
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: [0, 1.4, 1], opacity: 1 }}
                       transition={{

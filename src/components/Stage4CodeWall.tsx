@@ -38,14 +38,26 @@ interface Props {
   onBack?: () => void
 }
 
+// 步骤：0=只显示加法列(?)  1=揭示加法答案  2=显示减法列(?)  3=揭示减法答案
 export default function Stage4CodeWall({ onContinue, onBack }: Props) {
-  const [revealed, setRevealed] = useState(false)
+  const [step, setStep] = useState(0)
 
   const handleAction = () => {
     playClick()
-    if (!revealed) setRevealed(true)
+    if (step < 3) setStep(s => s + 1)
     else onContinue()
   }
+
+  const buttonLabels = [
+    '揭示加法答案',
+    '出现减法算式',
+    '揭示减法答案',
+    '继续探索',
+  ]
+
+  const revealAdd = step >= 1
+  const showSub = step >= 2
+  const revealSub = step >= 3
 
   return (
     <Container>
@@ -66,88 +78,99 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
       </ParticleLayer>
 
       <ContentWrapper>
-        {/* 主体表格 */}
         <TableCard
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
         >
           <Columns>
+            {/* 加法列 — 始终显示 */}
             <Column>
               <ColHeader color={COLORS.purple}>✦ 有趣的加法算式 ✦</ColHeader>
               {ROWS.map((row, i) => (
                 <FormulaRow key={i}>
                   <NumCell
                     hidden={row.add.aHidden}
-                    revealed={revealed && row.add.aHidden}
+                    revealed={revealAdd}
                     baseText={row.add.aHidden ? '?' : String(row.add.a)}
                     revealText={String(row.add.a)}
-                    delay={i * 0.12}
+                    delay={i * 0.08}
                   />
                   <Op>+</Op>
                   <NumCell
                     hidden={row.add.bHidden}
-                    revealed={revealed && row.add.bHidden}
+                    revealed={revealAdd}
                     baseText={row.add.bHidden ? '?' : String(row.add.b)}
                     revealText={String(row.add.b)}
-                    delay={i * 0.12 + 0.04}
+                    delay={i * 0.08 + 0.03}
                   />
                   <Op>=</Op>
                   <NumCell
                     hidden={true}
-                    revealed={revealed}
+                    revealed={revealAdd}
                     baseText="?"
                     revealText={String(row.add.result)}
-                    delay={i * 0.12 + 0.08}
+                    delay={i * 0.08 + 0.06}
                   />
                 </FormulaRow>
               ))}
             </Column>
 
-            <ColumnDivider />
-
-            <Column>
-              <ColHeader color={COLORS.gold}>✦ 有趣的减法算式 ✦</ColHeader>
-              {ROWS.map((row, i) => (
-                <FormulaRow key={i}>
-                  <NumCell
-                    hidden={row.sub.aHidden}
-                    revealed={revealed && row.sub.aHidden}
-                    baseText={row.sub.aHidden ? '?' : String(row.sub.a)}
-                    revealText={String(row.sub.a)}
-                    delay={i * 0.12}
-                  />
-                  <Op>−</Op>
-                  <NumCell
-                    hidden={row.sub.bHidden}
-                    revealed={revealed && row.sub.bHidden}
-                    baseText={row.sub.bHidden ? '?' : String(row.sub.b)}
-                    revealText={String(row.sub.b)}
-                    delay={i * 0.12 + 0.04}
-                  />
-                  <Op>=</Op>
-                  <NumCell
-                    hidden={true}
-                    revealed={revealed}
-                    baseText="?"
-                    revealText={String(row.sub.result)}
-                    delay={i * 0.12 + 0.08}
-                  />
-                </FormulaRow>
-              ))}
-            </Column>
+            {/* 分隔线 + 减法列 — 步骤>=2时出现 */}
+            {showSub && (
+              <>
+                <ColumnDivider
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: 1, scaleY: 1 }}
+                  transition={{ duration: 0.4 }}
+                />
+                <Column
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ColHeader color={COLORS.gold}>✦ 有趣的减法算式 ✦</ColHeader>
+                  {ROWS.map((row, i) => (
+                    <FormulaRow key={i}>
+                      <NumCell
+                        hidden={row.sub.aHidden}
+                        revealed={revealSub}
+                        baseText={row.sub.aHidden ? '?' : String(row.sub.a)}
+                        revealText={String(row.sub.a)}
+                        delay={i * 0.08}
+                      />
+                      <Op>−</Op>
+                      <NumCell
+                        hidden={row.sub.bHidden}
+                        revealed={revealSub}
+                        baseText={row.sub.bHidden ? '?' : String(row.sub.b)}
+                        revealText={String(row.sub.b)}
+                        delay={i * 0.08 + 0.03}
+                      />
+                      <Op>=</Op>
+                      <NumCell
+                        hidden={true}
+                        revealed={revealSub}
+                        baseText="?"
+                        revealText={String(row.sub.result)}
+                        delay={i * 0.08 + 0.06}
+                      />
+                    </FormulaRow>
+                  ))}
+                </Column>
+              </>
+            )}
           </Columns>
         </TableCard>
 
-        {/* 底部按钮区（含完成提示） */}
         <FooterRow>
           <AnimatePresence>
-            {revealed && (
+            {step === 3 && (
               <CompleteHint
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ delay: 1.6 }}
+                transition={{ delay: 0.8 }}
               >
                 🎉 全部密码已破解
               </CompleteHint>
@@ -169,7 +192,7 @@ export default function Stage4CodeWall({ onContinue, onBack }: Props) {
             whileTap={{ scale: 0.97 }}
             onClick={handleAction}
           >
-            <span>{revealed ? '继续探索' : '揭示全部密码'}</span>
+            <span>{buttonLabels[step]}</span>
             <IoChevronForward />
           </ContinueButton>
         </FooterRow>
@@ -246,12 +269,12 @@ const Columns = styled.div`
   align-items: stretch;
 `
 
-const ColumnDivider = styled.div`
+const ColumnDivider = styled(motion.div)`
   width: 1px;
   background: linear-gradient(180deg, transparent, rgba(139, 92, 246, 0.4), transparent);
 `
 
-const Column = styled.div`
+const Column = styled(motion.div)`
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -272,7 +295,6 @@ const FormulaRow = styled.div`
   gap: 10px;
 `
 
-// Cell wrapper with staggered number reveal
 function NumCell({ hidden, revealed, baseText, revealText, delay }: {
   hidden: boolean
   revealed: boolean
