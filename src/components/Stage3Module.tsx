@@ -61,11 +61,12 @@ export default function Stage3Module({ targetSum, onContinue, onBack }: Stage3Mo
             <ChallengeIcon>
               <GiMagicSwirl />
             </ChallengeIcon>
-            <ChallengeMain>
-              括号里填几，等号才能成立？
-            </ChallengeMain>
             <SubHint>
-              和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
+              {targetSum === 44 ? (
+                '写出和为 44 的有趣算式'
+              ) : (
+                <>写出和为 <SumHighlight highlight>99</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight></>
+              )}
             </SubHint>
           </ChallengeCard>
         )}
@@ -170,27 +171,19 @@ const ChallengeIcon = styled.div`
   filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6));
 `
 
-const ChallengeMain = styled.div`
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: ${COLORS.textPrimary};
-  text-align: center;
-  line-height: 1.4;
-`
-
 const SubHint = styled.div`
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: ${COLORS.gold};
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: #fff;
   text-align: center;
   margin-top: 4px;
 `
 
-const SumHighlight = styled.span`
+const SumHighlight = styled.span<{ highlight?: boolean }>`
   font-size: 3.2rem;
   font-weight: 900;
-  color: ${COLORS.gold};
-  text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+  color: ${props => props.highlight ? COLORS.gold : '#fff'};
+  text-shadow: ${props => props.highlight ? '0 0 20px rgba(251, 191, 36, 0.6)' : 'none'};
   padding: 0 6px;
 `
 

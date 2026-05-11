@@ -153,10 +153,10 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                       <stop offset="100%" stopColor="#ef4444" />
                     </linearGradient>
                   </defs>
-                  {/* 主线 — 纯色 */}
+                  {/* 主线 — 亮色 */}
                   <motion.path
                     d={pathD}
-                    stroke="rgba(255,255,255,0.85)"
+                    stroke="#fbbf24"
                     strokeWidth={5}
                     fill="none"
                     strokeLinecap="round"
@@ -165,23 +165,6 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 5, ease: 'easeInOut' }}
                   />
-                  {points.map((p, i) => (
-                    <motion.circle
-                      key={i}
-                      cx={p.x}
-                      cy={p.y}
-                      r={8}
-                      fill="#fff"
-                      stroke="rgba(255,255,255,0.5)"
-                      strokeWidth={2}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: [0, 1.4, 1], opacity: 1 }}
-                      transition={{
-                        delay: 0.3 + (i / Math.max(1, points.length - 1)) * 4.5,
-                        duration: 0.5,
-                      }}
-                    />
-                  ))}
                 </ChainSvg>
               )}
 
@@ -193,8 +176,8 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                     <NumBox ref={setCellRef(`left-${i}`)} highlight={leftIsChain}>
                       {stair.left}
                     </NumBox>
-                    <OpText>+</OpText>
-                    <BracketBox filled={step >= 1}>
+                    <OpText dim={step >= 2}>+</OpText>
+                    <BracketBox filled={step >= 1} dim={step >= 2}>
                       <AnimatePresence mode="wait">
                         {step >= 1 ? (
                           <motion.span
@@ -209,7 +192,7 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                         ) : null}
                       </AnimatePresence>
                     </BracketBox>
-                    <OpText>=</OpText>
+                    <OpText dim={step >= 2}>=</OpText>
                     <NumBox ref={setCellRef(`right-${i}`)} highlight={resultIsChain}>
                       {stair.result}
                     </NumBox>
@@ -398,22 +381,23 @@ const NumBox = styled(motion.div)<{ highlight: boolean }>`
   font-weight: 900;
   border-radius: 12px;
   color: ${props => props.highlight ? '#fff' : COLORS.textPrimary};
-  border: 2px solid ${props => props.highlight ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.08)'};
+  border: 2px solid ${props => props.highlight ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.06)'};
   background: ${props => props.highlight
-    ? 'rgba(255,255,255,0.12)'
-    : 'rgba(255,255,255,0.04)'};
+    ? 'rgba(239,68,68,0.12)'
+    : 'rgba(255,255,255,0.03)'};
   transition: all 0.4s;
 `
 
-const OpText = styled.span`
+const OpText = styled.span<{ dim?: boolean }>`
   font-size: 2rem;
   font-weight: 700;
-  color: ${COLORS.textSecondary};
+  color: ${props => props.dim ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.9)'};
   width: 28px;
   text-align: center;
+  transition: color 0.8s ease;
 `
 
-const BracketBox = styled(motion.div)<{ filled: boolean }>`
+const BracketBox = styled(motion.div)<{ filled: boolean; dim?: boolean }>`
   min-width: 90px;
   height: 58px;
   padding: 0 8px;
@@ -423,13 +407,17 @@ const BracketBox = styled(motion.div)<{ filled: boolean }>`
   font-size: 2rem;
   font-weight: 900;
   border-radius: 12px;
-  border: 2px dashed ${props => props.filled ? 'rgba(255,255,255,0.5)' : COLORS.purpleLight};
-  background: ${props => props.filled ? 'rgba(255,255,255,0.08)' : 'rgba(139,92,246,0.08)'};
-  color: #fff;
+  border: none;
+  background: transparent;
+  color: ${props => {
+    if (!props.filled) return 'rgba(255,255,255,0.25)'
+    return props.dim ? 'rgba(255,255,255,0.6)' : '#fff'
+  }};
   position: relative;
+  transition: color 0.8s ease;
 
-  &::before { content: '('; position: absolute; left: 8px; color: ${COLORS.purpleLight}; font-size: 1.8rem; font-weight: 700; }
-  &::after  { content: ')'; position: absolute; right: 8px; color: ${COLORS.purpleLight}; font-size: 1.8rem; font-weight: 700; }
+  &::before { content: '('; position: absolute; left: 10px; color: ${props => props.dim ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)'}; font-size: 1.6rem; font-weight: 600; transition: color 0.8s ease; }
+  &::after  { content: ')'; position: absolute; right: 10px; color: ${props => props.dim ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)'}; font-size: 1.6rem; font-weight: 600; transition: color 0.8s ease; }
 `
 
 const FooterRow = styled.div`
