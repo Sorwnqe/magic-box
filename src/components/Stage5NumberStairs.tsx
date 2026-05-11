@@ -156,7 +156,7 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                   {/* 主线 — 纯色 */}
                   <motion.path
                     d={pathD}
-                    stroke="#fbbf24"
+                    stroke="rgba(255,255,255,0.85)"
                     strokeWidth={5}
                     fill="none"
                     strokeLinecap="round"
@@ -171,8 +171,8 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
                       cx={p.x}
                       cy={p.y}
                       r={8}
-                      fill="#fbbf24"
-                      stroke="#fff"
+                      fill="#fff"
+                      stroke="rgba(255,255,255,0.5)"
                       strokeWidth={2}
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: [0, 1.4, 1], opacity: 1 }}
@@ -269,11 +269,6 @@ export default function Stage5NumberStairs({ onContinue, onBack }: Props) {
 const sparkleAnim = keyframes`
   0%, 100% { opacity: 0.2; transform: scale(0.8); }
   50% { opacity: 0.8; transform: scale(1.2); }
-`
-
-const glowPulse = keyframes`
-  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
-  50% { box-shadow: 0 0 22px rgba(239,68,68,0.75); }
 `
 
 // ========== Styled ==========
@@ -403,12 +398,11 @@ const NumBox = styled(motion.div)<{ highlight: boolean }>`
   font-weight: 900;
   border-radius: 12px;
   color: ${props => props.highlight ? '#fff' : COLORS.textPrimary};
-  border: 2px solid ${props => props.highlight ? COLORS.red : 'rgba(255,255,255,0.08)'};
+  border: 2px solid ${props => props.highlight ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.08)'};
   background: ${props => props.highlight
-    ? 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(251,191,36,0.15))'
+    ? 'rgba(255,255,255,0.12)'
     : 'rgba(255,255,255,0.04)'};
   transition: all 0.4s;
-  ${props => props.highlight && `animation: ${glowPulse} 2s ease-in-out infinite;`}
 `
 
 const OpText = styled.span`
@@ -429,9 +423,9 @@ const BracketBox = styled(motion.div)<{ filled: boolean }>`
   font-size: 2rem;
   font-weight: 900;
   border-radius: 12px;
-  border: 2px dashed ${props => props.filled ? COLORS.gold : COLORS.purpleLight};
-  background: ${props => props.filled ? 'rgba(251,191,36,0.1)' : 'rgba(139,92,246,0.08)'};
-  color: ${COLORS.goldLight};
+  border: 2px dashed ${props => props.filled ? 'rgba(255,255,255,0.5)' : COLORS.purpleLight};
+  background: ${props => props.filled ? 'rgba(255,255,255,0.08)' : 'rgba(139,92,246,0.08)'};
+  color: #fff;
   position: relative;
 
   &::before { content: '('; position: absolute; left: 8px; color: ${COLORS.purpleLight}; font-size: 1.8rem; font-weight: 700; }
