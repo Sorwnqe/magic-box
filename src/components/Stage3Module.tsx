@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
-import { GiMagicSwirl, GiLightBulb } from 'react-icons/gi'
+import { GiMagicSwirl } from 'react-icons/gi'
 import { playClick } from '../hooks/useSound'
 import MysticBackground from './MysticBackground'
 
@@ -25,9 +25,7 @@ interface Stage3ModuleProps {
   onBack?: () => void
 }
 
-export default function Stage3Module({ targetSum, title, onContinue, onBack }: Stage3ModuleProps) {
-  const isThinkMode = title?.includes('思考') ?? false
-
+export default function Stage3Module({ targetSum, onContinue, onBack }: Stage3ModuleProps) {
   const handleContinue = () => {
     playClick()
     onContinue()
@@ -59,27 +57,16 @@ export default function Stage3Module({ targetSum, title, onContinue, onBack }: S
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            style={{
-              borderColor: isThinkMode ? '#4ade80' : COLORS.purpleLight,
-              boxShadow: isThinkMode
-                ? '0 20px 60px rgba(34, 197, 94, 0.35), inset 0 0 30px rgba(34, 197, 94, 0.08)'
-                : '0 20px 60px rgba(139, 92, 246, 0.4), inset 0 0 30px rgba(139, 92, 246, 0.08)',
-            }}
           >
-            <ChallengeIcon style={{ color: isThinkMode ? '#4ade80' : COLORS.gold }}>
-              {isThinkMode ? <GiLightBulb /> : <GiMagicSwirl />}
+            <ChallengeIcon>
+              <GiMagicSwirl />
             </ChallengeIcon>
             <ChallengeMain>
-              {isThinkMode ? (
-                <>
-                  思考：和为<SumHighlight style={{ color: '#4ade80' }}>{targetSum}</SumHighlight>的算式有哪些？
-                </>
-              ) : (
-                <>
-                  写出和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
-                </>
-              )}
+              括号里填几，等号才能成立？
             </ChallengeMain>
+            <SubHint>
+              和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
+            </SubHint>
           </ChallengeCard>
         )}
 
@@ -168,12 +155,12 @@ const ChallengeCard = styled(motion.div)`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 40px 72px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
-  border: 2px solid ${COLORS.purpleLight};
+  border: 2px solid rgba(255, 255, 255, 0.35);
   border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(139, 92, 246, 0.4), inset 0 0 30px rgba(139, 92, 246, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.05);
   max-width: 700px;
 `
 
@@ -189,6 +176,14 @@ const ChallengeMain = styled.div`
   color: ${COLORS.textPrimary};
   text-align: center;
   line-height: 1.4;
+`
+
+const SubHint = styled.div`
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: ${COLORS.gold};
+  text-align: center;
+  margin-top: 4px;
 `
 
 const SumHighlight = styled.span`
