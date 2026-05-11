@@ -6,9 +6,9 @@ import { preloadSounds } from './hooks/useSound'
 import WaitingScreen from './components/WaitingScreen'
 
 import MagicMainApp from './components/MagicMainApp'
-import FormulaMagicStage from './components/FormulaMagicStage'
+// import FormulaMagicStage from './components/FormulaMagicStage'
 
-import CongRevealPage from './components/CongRevealPage'
+// import CongRevealPage from './components/CongRevealPage'
 import Stage3Module from './components/Stage3Module'
 import Stage3GroupWork from './components/Stage3GroupWork'
 import Stage4CodeWall from './components/Stage4CodeWall'
@@ -16,7 +16,7 @@ import Stage5NumberStairs from './components/Stage5NumberStairs'
 import Stage5Video from './components/Stage5Video'
 import Stage6DetectiveTask from './components/Stage6DetectiveTask'
 import MagicEnding from './components/MagicEnding'
-import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
+// import { IoChevronBack, IoChevronForward, IoHome, IoCheckmarkCircle } from 'react-icons/io5'
 import './App.css'
 
 // 活动阶段：
@@ -121,32 +121,10 @@ function App() {
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
             <MagicMainApp />
-            <StageNavigation
-              currentStage={1}
-              onPrev={goTo('waiting', 'left')}
-              onNext={goTo('stage1_imitate')}
-            />
-          </motion.div>
-        )}
-
-        {/* 仿写算式 */}
-        {appState === 'stage1_imitate' && (
-          <motion.div
-            key="stage1_imitate"
-            custom={direction}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <FormulaMagicStage />
-            <StageNavigation
-              currentStage={2}
-              onPrev={goTo('stage1_decode', 'left')}
-              onNext={goTo('stage3_module1')}
-            />
+            <SimpleNav>
+              <SimpleNavBtn onClick={goTo('waiting', 'left')}>返回</SimpleNavBtn>
+              <SimpleNavBtn primary onClick={goTo('stage3_module1')}>继续探索</SimpleNavBtn>
+            </SimpleNav>
           </motion.div>
         )}
 
@@ -166,7 +144,7 @@ function App() {
               title="算式创造关"
               targetSum={44}
               onContinue={goTo('stage3_module2')}
-              onBack={goTo('stage1_imitate', 'left')}
+              onBack={goTo('stage1_decode', 'left')}
             />
           </motion.div>
         )}
@@ -205,27 +183,8 @@ function App() {
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
             <Stage3GroupWork
-              onContinue={goTo('stage2_cong')}
-              onBack={goTo('stage3_module2', 'left')}
-            />
-          </motion.div>
-        )}
-
-        {/* 聪字 reveal 页 */}
-        {appState === 'stage2_cong' && (
-          <motion.div
-            key="stage2_cong"
-            custom={direction}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            style={{ width: '100%', height: '100%', position: 'relative' }}
-          >
-            <CongRevealPage
               onContinue={goTo('stage4_codewall')}
-              onBack={goTo('stage3_group', 'left')}
+              onBack={goTo('stage3_module2', 'left')}
             />
           </motion.div>
         )}
@@ -244,7 +203,7 @@ function App() {
           >
             <Stage4CodeWall
               onContinue={goTo('stage5_stairs')}
-              onBack={goTo('stage2_cong', 'left')}
+              onBack={goTo('stage3_group', 'left')}
             />
           </motion.div>
         )}
@@ -324,6 +283,46 @@ function App() {
   )
 }
 
+// 简单导航（第一关专用：返回 + 继续探索）
+const SimpleNav = styled.div`
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 1000;
+`
+
+const SimpleNavBtn = styled(motion.button)<{ primary?: boolean }>`
+  padding: 12px 28px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: ${props => props.primary ? 'white' : '#475569'};
+  background: ${props => props.primary
+    ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)'
+    : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)'};
+  box-shadow: ${props => props.primary
+    ? '0 4px 15px rgba(99, 102, 241, 0.4)'
+    : '0 4px 15px rgba(0, 0, 0, 0.1)'};
+
+  &:hover {
+    box-shadow: ${props => props.primary
+    ? '0 8px 25px rgba(99, 102, 241, 0.45)'
+    : '0 8px 25px rgba(0, 0, 0, 0.12)'};
+    filter: brightness(1.03);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+`
+
+/*
 // 关卡导航组件
 function StageNavigation({
   currentStage,
@@ -343,49 +342,18 @@ function StageNavigation({
 
   return (
     <NavContainer>
-      {/* 上一关按钮 */}
-      <NavButton
-        onClick={onPrev}
-        position="left"
-        whileHover={{ scale: 1.03, x: -3, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-        whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
-      >
+      <NavButton onClick={onPrev} position="left">
         {currentStage === 1 ? <IoHome /> : <IoChevronBack />}
         <span>{currentStage === 1 ? '返回封面' : stages[currentStage - 2].name}</span>
       </NavButton>
-
-      {/* 关卡指示器 */}
       <StageIndicator>
         {stages.map((stage) => (
-          <StagePoint
-            key={stage.id}
-            active={stage.id === currentStage}
-            whileHover={{ scale: 1.1, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-          >
+          <StagePoint key={stage.id} active={stage.id === currentStage}>
             <span>{stage.label}</span>
-            {stage.id === currentStage && (
-              <motion.div
-                layoutId="activeStage"
-                style={{
-                  position: 'absolute',
-                  inset: -4,
-                  border: '3px solid #3b82f6',
-                  borderRadius: 20,
-                }}
-                transition={{ type: 'spring', damping: 20 }}
-              />
-            )}
           </StagePoint>
         ))}
       </StageIndicator>
-
-      {/* 下一关按钮 */}
-      <NavButton
-        onClick={onNext}
-        position="right"
-        whileHover={{ scale: 1.03, x: 3, transition: { type: 'spring', damping: 20, stiffness: 400 } }}
-        whileTap={{ scale: 0.97, transition: { type: 'spring', damping: 25, stiffness: 500 } }}
-      >
+      <NavButton onClick={onNext} position="right">
         <span>{currentStage === 4 ? '完成活动' : stages[currentStage].name}</span>
         {currentStage === 4 ? <IoCheckmarkCircle /> : <IoChevronForward />}
       </NavButton>
@@ -394,90 +362,17 @@ function StageNavigation({
 }
 
 const NavContainer = styled.div`
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 12px 25px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 50px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  ...
 `
-
 const NavButton = styled(motion.button) <{ position: 'left' | 'right' }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: ${props => props.position === 'right'
-    ? 'linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)'
-    : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)'};
-  color: ${props => props.position === 'right' ? 'white' : '#475569'};
-  border: none;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: ${props => props.position === 'right'
-    ? '0 4px 15px rgba(99, 102, 241, 0.4)'
-    : '0 4px 15px rgba(0, 0, 0, 0.1)'};
-
-  svg {
-    font-size: 1.1rem;
-  }
-
-  &:hover {
-    box-shadow: ${props => props.position === 'right'
-    ? '0 8px 25px rgba(99, 102, 241, 0.45)'
-    : '0 8px 25px rgba(0, 0, 0, 0.12)'};
-    filter: brightness(1.03);
-  }
-  
-  &:active {
-    transform: translateY(1px);
-  }
+  ...
 `
-
 const StageIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 0 15px;
+  ...
 `
-
 const StagePoint = styled(motion.div) <{ active: boolean }>`
-  position: relative;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${props => props.active
-    ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
-    : '#f1f5f9'};
-  border-radius: 50%;
-  font-size: 1rem;
-  font-weight: 700;
-  color: ${props => props.active ? 'white' : '#64748b'};
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    background: ${props => props.active
-    ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)'
-    : '#e2e8f0'};
-    transform: scale(1.08);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
+  ...
 `
+*/
 
 export default App
