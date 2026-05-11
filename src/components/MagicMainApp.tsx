@@ -49,7 +49,7 @@ interface PoppingNumber {
 
 // 2D Canvas 魔法盒组件
 function MagicBoxCanvas({ 
-  isSpinning, 
+  isShaking, 
   isOpening, 
   displayNumber,
   hasNumber,
@@ -57,7 +57,7 @@ function MagicBoxCanvas({
   poppingNumber,
   glassBoxRef
 }: { 
-  isSpinning: boolean
+  isShaking: boolean
   isOpening: boolean
   displayNumber: string
   hasNumber: boolean
@@ -70,7 +70,7 @@ function MagicBoxCanvas({
   const lidAngleRef = useRef(0)
   const particlesRef = useRef<MagicParticle[]>([])
   const floatPhaseRef = useRef(0)
-  const spinAngleRef = useRef(0)
+  const shakeTimeRef = useRef(0)
   
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -104,16 +104,18 @@ function MagicBoxCanvas({
     floatPhaseRef.current += 0.02
     const floatY = Math.sin(floatPhaseRef.current) * 8
     
-    // 旋转动画
-    if (isSpinning) {
-      spinAngleRef.current += 0.15
+    // 魔盒抖动：快速左右小幅度抖动
+    if (isShaking) {
+      shakeTimeRef.current += 0.5
     } else {
-      spinAngleRef.current *= 0.95
+      shakeTimeRef.current = 0
     }
     
-    // 盖子打开动画
+    const shakeX = isShaking ? Math.sin(shakeTimeRef.current * 3) * 12 : 0
+    
+    // 盖子打开动画（加速）
     if (isOpening) {
-      lidAngleRef.current = Math.min(lidAngleRef.current + 0.1, Math.PI * 0.7)
+      lidAngleRef.current = Math.min(lidAngleRef.current + 0.25, Math.PI * 0.7)
       // 适量魔法粒子
       if (Math.random() < 0.3 && particlesRef.current.length < 30) {
         const colors = ['#fbbf24', '#22c55e', '#8b5cf6']
@@ -129,7 +131,7 @@ function MagicBoxCanvas({
         })
       }
     } else {
-      lidAngleRef.current = Math.max(lidAngleRef.current - 0.08, 0)
+      lidAngleRef.current = Math.max(lidAngleRef.current - 0.15, 0)
     }
     
     // 更新并绘制粒子
@@ -168,22 +170,21 @@ function MagicBoxCanvas({
     })
     
     ctx.save()
-    ctx.translate(cx, cy + floatY)
-    ctx.rotate(spinAngleRef.current)
+    ctx.translate(cx + shakeX, cy + floatY)
     
-    // 外圈光晕 - 更大
-    const glowGradient = ctx.createRadialGradient(0, 0, 100, 0, 0, 250)
+    // 外圈光晕
+    const glowGradient = ctx.createRadialGradient(0, 0, 94, 0, 0, 235)
     glowGradient.addColorStop(0, 'rgba(139, 92, 246, 0.35)')
     glowGradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.18)')
     glowGradient.addColorStop(1, 'rgba(139, 92, 246, 0)')
     ctx.fillStyle = glowGradient
-    ctx.fillRect(-280, -280, 560, 560)
+    ctx.fillRect(-263, -263, 526, 526)
     
-    // 装饰圆环 - 更大
+    // 装饰圆环
     ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)'
     ctx.lineWidth = 3
     ctx.beginPath()
-    ctx.arc(0, 0, 180, 0, Math.PI * 2)
+    ctx.arc(0, 0, 169, 0, Math.PI * 2)
     ctx.stroke()
     
     ctx.strokeStyle = 'rgba(167, 139, 250, 0.35)'
@@ -192,9 +193,9 @@ function MagicBoxCanvas({
     ctx.arc(0, 0, 210, 0, Math.PI * 2)
     ctx.stroke()
     
-    // 魔盒主体 - 更大尺寸
-    const boxSize = 160
-    const boxTop = -40
+    // 魔盒主体
+    const boxSize = 150
+    const boxTop = -38
     
     // 盒子阴影
     ctx.save()
@@ -228,13 +229,13 @@ function MagicBoxCanvas({
     ctx.fillRect(-boxSize/2, boxTop + boxSize/2 - 8, boxSize, 16)
     
     // 中心宝石
-    const gemGradient = ctx.createRadialGradient(0, boxTop + boxSize/2, 0, 0, boxTop + boxSize/2, 25)
+    const gemGradient = ctx.createRadialGradient(0, boxTop + boxSize/2, 0, 0, boxTop + boxSize/2, 24)
     gemGradient.addColorStop(0, '#fef3c7')
     gemGradient.addColorStop(0.5, '#fbbf24')
     gemGradient.addColorStop(1, '#d97706')
     ctx.fillStyle = gemGradient
     ctx.beginPath()
-    ctx.arc(0, boxTop + boxSize/2, 20, 0, Math.PI * 2)
+    ctx.arc(0, boxTop + boxSize/2, 19, 0, Math.PI * 2)
     ctx.fill()
     ctx.strokeStyle = '#fff'
     ctx.lineWidth = 3
@@ -245,7 +246,7 @@ function MagicBoxCanvas({
     ctx.translate(0, boxTop)
     ctx.rotate(-lidAngleRef.current)
     
-    const lidHeight = 32
+    const lidHeight = 30
     const lidGradient = ctx.createLinearGradient(-boxSize/2 - 5, -lidHeight, boxSize/2 + 5, 0)
     lidGradient.addColorStop(0, '#c4b5fd')
     lidGradient.addColorStop(0.5, '#a78bfa')
@@ -261,7 +262,7 @@ function MagicBoxCanvas({
     ctx.fillRect(-8, -lidHeight, 16, lidHeight)
     
     // 盒盖顶部宝石
-    const topGemGradient = ctx.createRadialGradient(0, -lidHeight/2, 0, 0, -lidHeight/2, 12)
+    const topGemGradient = ctx.createRadialGradient(0, -lidHeight/2, 0, 0, -lidHeight/2, 11)
     topGemGradient.addColorStop(0, '#fef3c7')
     topGemGradient.addColorStop(0.5, '#fbbf24')
     topGemGradient.addColorStop(1, '#d97706')
@@ -275,7 +276,7 @@ function MagicBoxCanvas({
     // 显示盒子里的数字（在盒子表面，只有当有数字且未打开时显示）
     if (hasNumber && !isOpening && !flyingNumber && displayNumber !== '?') {
       ctx.save()
-      ctx.font = 'bold 52px var(--font-display), system-ui'
+      ctx.font = 'bold 50px var(--font-display), system-ui'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'rgba(255,255,255,0.95)'
@@ -415,7 +416,7 @@ function MagicBoxCanvas({
     }
     
     animationRef.current = requestAnimationFrame(draw)
-  }, [isSpinning, isOpening, displayNumber, hasNumber, flyingNumber, poppingNumber, glassBoxRef])
+  }, [isShaking, isOpening, displayNumber, hasNumber, flyingNumber, poppingNumber, glassBoxRef])
   
   useEffect(() => {
     const canvas = canvasRef.current
@@ -456,7 +457,7 @@ function MagicBoxCanvas({
 export default function MagicMainApp() {
   const magicBox = useMagicBox()
   const [inputValue, setInputValue] = useState('')
-  const [isSpinning, setIsSpinning] = useState(false)
+  const [isShaking, setIsShaking] = useState(false)
   const [isOpening, setIsOpening] = useState(false)
   const [displayNumber, setDisplayNumber] = useState('?')
   const [hasNumber, setHasNumber] = useState(false)
@@ -482,11 +483,11 @@ export default function MagicMainApp() {
     return ones * 10 + tens
   }
   
-  // 数字飞入动画
+  // 数字飞入动画（加速）
   const startFlyingAnimation = (num: string, startX: number, startY: number, onComplete: () => void) => {
     let progress = 0
     const animate = () => {
-      progress += 0.025
+      progress += 0.05
       if (progress >= 1) {
         setFlyingNumber(null)
         onComplete()
@@ -499,14 +500,14 @@ export default function MagicMainApp() {
     flyingAnimRef.current = requestAnimationFrame(animate)
   }
   
-  // 数字弹出动画 - 弹出时立即触发结果和礼花
+  // 数字弹出动画
   const startPoppingAnimation = (num: string, onStart: () => void, onComplete: () => void) => {
     let progress = 0
     let triggeredStart = false
     const animate = () => {
-      progress += 0.025  // 稍微快一点
+      progress += 0.10
       
-      // 弹出到一半时触发结果显示和礼花
+      // 弹出到一半时触发输出显示和礼花
       if (progress > 0.25 && !triggeredStart) {
         triggeredStart = true
         onStart()
@@ -517,7 +518,7 @@ export default function MagicMainApp() {
         setTimeout(() => {
           setPoppingNumber(null)
           onComplete()
-        }, 1200)
+        }, 600)
         return
       }
       setPoppingNumber({ num, progress, scale: 0.1 + progress * 0.9, y: 0 })
@@ -557,14 +558,14 @@ export default function MagicMainApp() {
       // 飞入完成后，显示在盒子里
       setDisplayNumber(inputNum.toString())
       setHasNumber(true)
-      setIsSpinning(true)
+      setIsShaking(true)
       
-      // 旋转后打开盒子
+      // 晃动后打开盒子
       setTimeout(() => {
-        setIsSpinning(false)
+        setIsShaking(false)
         setIsOpening(true)
         
-        // 打开后弹出结果数字
+        // 打开后弹出输出数字
         setTimeout(() => {
           startPoppingAnimation(
             outputNum.toString(), 
@@ -608,8 +609,8 @@ export default function MagicMainApp() {
               setDisplayNumber('?')
             }
           )
-        }, 500)
-      }, 700)
+        }, 200)
+      }, 400)
     })
   }
   
@@ -648,7 +649,7 @@ export default function MagicMainApp() {
       {/* 全屏魔法动画Canvas - 必须在最外层 */}
       <FullscreenCanvas>
         <MagicBoxCanvas 
-          isSpinning={isSpinning} 
+          isShaking={isShaking} 
           isOpening={isOpening} 
           displayNumber={displayNumber}
           hasNumber={hasNumber}
@@ -664,25 +665,25 @@ export default function MagicMainApp() {
       </Header>
       
       <MainContent>
-        {/* 左侧：输入/结果 */}
+        {/* 左侧：输入/输出 */}
         <LeftPanel>
           <NumCard>
             <NumLabel>输入</NumLabel>
             <NumBig>{input.num}</NumBig>
             <NumDigits>
-              <Digit c={COLORS.purple}>{input.t}<span>十</span></Digit>
-              <Digit c={COLORS.primaryLight}>{input.o}<span>个</span></Digit>
+              <Digit c={COLORS.purple}><span>十位：</span>{input.t}</Digit>
+              <Digit c={COLORS.primaryLight}><span>个位：</span>{input.o}</Digit>
             </NumDigits>
           </NumCard>
           
           <ArrowIcon><IoArrowDown /></ArrowIcon>
           
           <NumCard glow>
-            <NumLabel>结果</NumLabel>
+            <NumLabel>输出</NumLabel>
             <NumBig glow>{output.show ? output.num : '??'}</NumBig>
             <NumDigits>
-              <Digit c={COLORS.success}>{output.show ? output.t : '-'}<span>十</span></Digit>
-              <Digit c={COLORS.accent}>{output.show ? output.o : '-'}<span>个</span></Digit>
+              <Digit c={COLORS.success}><span>十位：</span>{output.show ? output.t : '-'}</Digit>
+              <Digit c={COLORS.accent}><span>个位：</span>{output.show ? output.o : '-'}</Digit>
             </NumDigits>
           </NumCard>
         </LeftPanel>
@@ -797,42 +798,43 @@ const Title = styled.h1`
 const MainContent = styled.div`
   flex: 1;
   display: flex;
-  gap: 20px;
-  padding: 15px 25px 90px;
+  gap: 16px;
+  padding: 12px 20px 40px;
   z-index: 10;
 `
 
 // 三栏布局 - 固定宽度
 const LeftPanel = styled.div`
-  flex: 0 0 200px;
+  flex: 0 0 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 12px;
 `
 
 const NumCard = styled.div<{ glow?: boolean }>`
   background: rgba(255,255,255,0.96);
-  border: 2px solid ${p => p.glow ? COLORS.success : COLORS.primaryLight};
+  border: 3px solid ${p => p.glow ? COLORS.success : COLORS.primaryLight};
   border-radius: 20px;
-  padding: 22px 32px;
+  padding: 24px 32px;
   text-align: center;
-  min-width: 160px;
+  min-width: 280px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 `
 
 const NumLabel = styled.div`
-  font-size: 13px;
+  font-size: 24px;
   color: ${COLORS.textMuted};
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 800;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 `
 
 const NumBig = styled.div<{ glow?: boolean }>`
   font-family: var(--font-display);
-  font-size: 52px;
+  font-size: 72px;
   font-weight: 800;
   background: ${p => p.glow
     ? `linear-gradient(135deg, ${COLORS.success}, #06b6d4)`
@@ -844,7 +846,7 @@ const NumBig = styled.div<{ glow?: boolean }>`
 
 const NumDigits = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 16px;
   justify-content: center;
   margin-top: 12px;
 `
@@ -853,16 +855,16 @@ const Digit = styled.div<{ c: string }>`
   background: ${p => p.c}12;
   border: 2px solid ${p => p.c};
   border-radius: 10px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   color: ${p => p.c};
-  span { font-size: 11px; color: ${COLORS.textMuted}; margin-left: 3px; }
+  span { font-size: 14px; color: ${COLORS.textMuted}; margin-right: 4px; }
 `
 
 const ArrowIcon = styled.div`
-  font-size: 28px;
+  font-size: 32px;
   color: ${COLORS.gold};
   display: flex;
   align-items: center;
@@ -879,22 +881,8 @@ const CenterPanel = styled.div`
 
 const GlassBox = styled.div`
   position: relative;
-  width: 100%;
-  height: calc(100% - 20px);
-  max-height: calc(100vh - 180px);
-  min-height: 400px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(30, 64, 175, 0.25),
-    inset 0 0 30px rgba(255, 255, 255, 0.1);
-  
-  @media (min-width: 1400px) {
-    max-height: calc(100vh - 150px);
-  }
+  width: 380px;
+  height: 380px;
 `
 
 const FullscreenCanvas = styled.div`
@@ -911,7 +899,7 @@ const MagicCanvas = styled.canvas`
 `
 
 const RightPanel = styled.div`
-  flex: 0 0 320px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -936,7 +924,7 @@ const KeypadCard = styled.div`
 `
 
 const Display = styled.div`
-  height: 70px;
+  height: 60px;
   background: linear-gradient(135deg, ${COLORS.primary}08, ${COLORS.purple}08);
   border: 2px solid ${COLORS.primaryLight};
   border-radius: 14px;
@@ -944,7 +932,7 @@ const Display = styled.div`
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 800;
   color: ${COLORS.primary};
 `

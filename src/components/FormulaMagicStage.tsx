@@ -223,21 +223,13 @@ const RightPanel = styled.div`
   padding-bottom: 20px;
 `
 
-// 魔法台Canvas容器 - 毛玻璃背景
+// 魔法台Canvas容器
 const MagicCanvasContainer = styled.div`
   position: relative;
   width: 100%;
   height: calc(100% - 20px);
   max-height: calc(100vh - 180px);
   min-height: 400px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px);
-  border-radius: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 8px 32px rgba(139, 92, 246, 0.15),
-    inset 0 0 30px rgba(255, 255, 255, 0.1);
-  overflow: hidden;
   
   @media (min-width: 1400px) {
     max-height: calc(100vh - 150px);
@@ -438,7 +430,7 @@ export default function FormulaMagicStage() {
 
     const centerX = width / 2
     const centerY = height / 2
-    const baseRadius = Math.min(width, height) * 0.38
+    const baseRadius = Math.min(width, height) * 0.32
     const state = platformAnimRef.current
 
     // 更新动画状态
@@ -446,7 +438,7 @@ export default function FormulaMagicStage() {
     state.pulsePhase += 0.04
 
     // 外层光晕
-    const glowGradient = ctx.createRadialGradient(centerX, centerY, baseRadius * 0.3, centerX, centerY, baseRadius * 1.6)
+    const glowGradient = ctx.createRadialGradient(centerX, centerY, baseRadius * 0.3, centerX, centerY, baseRadius * 1.3)
     const glowAlpha = 0.2 + state.glowIntensity * 0.4 + Math.sin(state.pulsePhase) * 0.08
     glowGradient.addColorStop(0, `rgba(139, 92, 246, ${glowAlpha})`)
     glowGradient.addColorStop(0.4, `rgba(99, 102, 241, ${glowAlpha * 0.6})`)
@@ -954,11 +946,23 @@ export default function FormulaMagicStage() {
     const maxLen = maxLengths[activeInput]
 
     if (key === 'del') {
-      setter(currentValue.slice(0, -1))
+      if (currentValue.length > 0) {
+        setter(currentValue.slice(0, -1))
+      } else {
+        // 当前为空，回退到上一个输入框
+        if (activeInput === 'right') setActiveInput('left')
+        else if (activeInput === 'sum') setActiveInput('right')
+      }
     } else if (key === 'clear') {
       setter('')
     } else if (currentValue.length < maxLen) {
-      setter(currentValue + key)
+      const newValue = currentValue + key
+      setter(newValue)
+      // 输满后自动跳到下一个输入框
+      if (newValue.length >= maxLen) {
+        if (activeInput === 'left') setActiveInput('right')
+        else if (activeInput === 'right') setActiveInput('sum')
+      }
     }
   }
 

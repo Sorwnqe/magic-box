@@ -8,6 +8,7 @@ import WaitingScreen from './components/WaitingScreen'
 import MagicMainApp from './components/MagicMainApp'
 import FormulaMagicStage from './components/FormulaMagicStage'
 
+import CongRevealPage from './components/CongRevealPage'
 import Stage3Module from './components/Stage3Module'
 import Stage3GroupWork from './components/Stage3GroupWork'
 import Stage4CodeWall from './components/Stage4CodeWall'
@@ -33,6 +34,7 @@ type AppState =
   | 'waiting' 
   | 'stage1_decode' 
   | 'stage1_imitate'
+  | 'stage2_cong'
   | 'stage3_module1'
   | 'stage3_module2'
   | 'stage3_group'
@@ -203,8 +205,27 @@ function App() {
             style={{ width: '100%', height: '100%', position: 'relative' }}
           >
             <Stage3GroupWork
-              onContinue={goTo('stage4_codewall')}
+              onContinue={goTo('stage2_cong')}
               onBack={goTo('stage3_module2', 'left')}
+            />
+          </motion.div>
+        )}
+
+        {/* 聪字 reveal 页 */}
+        {appState === 'stage2_cong' && (
+          <motion.div
+            key="stage2_cong"
+            custom={direction}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <CongRevealPage
+              onContinue={goTo('stage4_codewall')}
+              onBack={goTo('stage3_group', 'left')}
             />
           </motion.div>
         )}
@@ -223,7 +244,7 @@ function App() {
           >
             <Stage4CodeWall
               onContinue={goTo('stage5_stairs')}
-              onBack={goTo('stage3_group', 'left')}
+              onBack={goTo('stage2_cong', 'left')}
             />
           </motion.div>
         )}
