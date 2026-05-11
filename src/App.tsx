@@ -8,7 +8,7 @@ import WaitingScreen from './components/WaitingScreen'
 import MagicMainApp from './components/MagicMainApp'
 // import FormulaMagicStage from './components/FormulaMagicStage'
 
-// import CongRevealPage from './components/CongRevealPage'
+import CongRevealPage from './components/CongRevealPage'
 import Stage3Module from './components/Stage3Module'
 // import Stage3GroupWork from './components/Stage3GroupWork'
 import Stage4CodeWall from './components/Stage4CodeWall'
@@ -164,8 +164,27 @@ function App() {
             <Stage3Module
               title="算式创造关"
               targetSum={99}
-              onContinue={goTo('stage4_codewall')}
+              onContinue={goTo('stage2_cong')}
               onBack={goTo('stage3_module1', 'left')}
+            />
+          </motion.div>
+        )}
+
+        {/* 第二关·聪字揭示 */}
+        {appState === 'stage2_cong' && (
+          <motion.div
+            key="stage2_cong"
+            custom={direction}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <CongRevealPage
+              onContinue={goTo('stage4_codewall')}
+              onBack={goTo('stage3_module2', 'left')}
             />
           </motion.div>
         )}
