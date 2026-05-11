@@ -23,6 +23,7 @@ import './App.css'
 // waiting -> stage1_decode (数字魔法)
 // -> stage1_imitate (仿写算式)
 // -> stage3_module1 (算式创造关 - 和为44)
+// -> stage3_module66 (有趣算式 - 和为66)
 // -> stage3_module2 (算式创造关 - 和为99)
 // -> stage3_group (小组合作倒计时)
 // -> stage4_codewall (智慧密码墙)
@@ -36,6 +37,7 @@ type AppState =
   | 'stage1_imitate'
   | 'stage2_cong'
   | 'stage3_module1'
+  | 'stage3_module66'
   | 'stage3_module2'
   | 'stage3_group'
   | 'stage4_codewall'
@@ -143,8 +145,29 @@ function App() {
             <Stage3Module
               title="算式创造关"
               targetSum={44}
-              onContinue={goTo('stage3_module2')}
+              onContinue={goTo('stage3_module66')}
               onBack={goTo('stage1_decode', 'left')}
+            />
+          </motion.div>
+        )}
+
+        {/* 第三关 - 和为66 */}
+        {appState === 'stage3_module66' && (
+          <motion.div
+            key="stage3_module66"
+            custom={direction}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <Stage3Module
+              title="思考：和为66的算式有哪些？"
+              targetSum={66}
+              onContinue={goTo('stage3_module2')}
+              onBack={goTo('stage3_module1', 'left')}
             />
           </motion.div>
         )}

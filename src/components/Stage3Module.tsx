@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { IoChevronForward, IoChevronBack } from 'react-icons/io5'
-import { GiMagicSwirl } from 'react-icons/gi'
+import { GiMagicSwirl, GiLightBulb } from 'react-icons/gi'
 import { playClick } from '../hooks/useSound'
 import MysticBackground from './MysticBackground'
 
@@ -18,21 +18,20 @@ const COLORS = {
 }
 
 interface Stage3ModuleProps {
-  targetSum?: 44 | 99   // 不传则只显示标题
+  targetSum?: 44 | 66 | 99   // 不传则只显示标题
   title?: string
   tagLabel?: string
   onContinue: () => void
   onBack?: () => void
 }
 
-export default function Stage3Module({ targetSum, onContinue, onBack }: Stage3ModuleProps) {
+export default function Stage3Module({ targetSum, title, onContinue, onBack }: Stage3ModuleProps) {
+  const isThinkMode = title?.includes('思考') ?? false
+
   const handleContinue = () => {
     playClick()
     onContinue()
   }
-
-  // const displayTitle = title ?? '算式创造关'
-  // const displayTagLabel = tagLabel ?? displayTitle
 
   return (
     <Container>
@@ -60,12 +59,26 @@ export default function Stage3Module({ targetSum, onContinue, onBack }: Stage3Mo
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
+            style={{
+              borderColor: isThinkMode ? '#4ade80' : COLORS.purpleLight,
+              boxShadow: isThinkMode
+                ? '0 20px 60px rgba(34, 197, 94, 0.35), inset 0 0 30px rgba(34, 197, 94, 0.08)'
+                : '0 20px 60px rgba(139, 92, 246, 0.4), inset 0 0 30px rgba(139, 92, 246, 0.08)',
+            }}
           >
-            <ChallengeIcon>
-              <GiMagicSwirl />
+            <ChallengeIcon style={{ color: isThinkMode ? '#4ade80' : COLORS.gold }}>
+              {isThinkMode ? <GiLightBulb /> : <GiMagicSwirl />}
             </ChallengeIcon>
             <ChallengeMain>
-              写出和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
+              {isThinkMode ? (
+                <>
+                  思考：和为<SumHighlight style={{ color: '#4ade80' }}>{targetSum}</SumHighlight>的算式有哪些？
+                </>
+              ) : (
+                <>
+                  写出和为 <SumHighlight>{targetSum}</SumHighlight> 的<YellowHighlight>有趣算式</YellowHighlight>
+                </>
+              )}
             </ChallengeMain>
           </ChallengeCard>
         )}
