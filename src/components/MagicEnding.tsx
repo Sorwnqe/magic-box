@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { playSuccess, playClick } from '../hooks/useSound'
-import { IoStar, IoPlay, IoPause, IoReload, IoChevronBack } from 'react-icons/io5'
+import { IoStar, IoChevronBack } from 'react-icons/io5'
 
 interface MagicEndingProps {
   onRestart: () => void
@@ -82,39 +82,15 @@ const COLORS = {
   purple: '#8b5cf6',
 }
 
+const DOUBAO_MUSIC_URL =
+  'https://www.doubao.com/music-sharing?vid=v0269cg10004d81sqj2ljht2j19g42a0&share_id=44803549375552514&task_id=0&source_type=web'
+
 export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  // const [videoEnded, setVideoEnded] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
 
   useEffect(() => {
     playSuccess()
   }, [])
-
-  const handleVideoEnd = () => {
-    // setVideoEnded(true)
-    setIsPlaying(false)
-  }
-
-  const togglePlay = () => {
-    if (!videoRef.current) return
-    if (isPlaying) {
-      videoRef.current.pause()
-      setIsPlaying(false)
-    } else {
-      videoRef.current.play().catch(() => {})
-      setIsPlaying(true)
-      // setVideoEnded(false)
-    }
-  }
-
-  const handleReplay = () => {
-    if (!videoRef.current) return
-    videoRef.current.currentTime = 0
-    videoRef.current.play().catch(() => {})
-    setIsPlaying(true)
-    // setVideoEnded(false)
-  }
 
   const handleBack = () => {
     playClick()
@@ -191,40 +167,26 @@ export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
       </ConfettiLayer>
 
       <ContentWrapper>
-        <VideoWrapper
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+        <MusicCard
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <video
-            ref={videoRef}
-            src="/video/mofaleyuan.mp4"
-            playsInline
-            onEnded={handleVideoEnd}
-            onPause={() => setIsPlaying(false)}
-            onPlay={() => setIsPlaying(true)}
-            style={{
-              display: 'block',
-              maxHeight: '65vh',
-              maxWidth: '100%',
-              width: 'auto',
-              height: 'auto',
-              borderRadius: '16px',
-            }}
+          {!iframeLoaded && (
+            <LoadingOverlay>
+              <LoadingSpinner />
+              <span>正在加载音乐…</span>
+            </LoadingOverlay>
+          )}
+          <StyledIframe
+            src={DOUBAO_MUSIC_URL}
+            title="豆包音乐"
+            allow="autoplay; encrypted-media"
+            onLoad={() => setIframeLoaded(true)}
           />
+        </MusicCard>
 
-          {/* 视频内叠加控制条 */}
-          <VideoOverlay>
-            <OverlayBtn onClick={togglePlay} whileTap={{ scale: 0.9 }}>
-              {isPlaying ? <IoPause /> : <IoPlay />}
-            </OverlayBtn>
-            <OverlayBtn onClick={handleReplay} whileTap={{ scale: 0.9 }}>
-              <IoReload />
-            </OverlayBtn>
-          </VideoOverlay>
-        </VideoWrapper>
-
-        {/* 返回 + 再来一次 放同一行 */}
+        {/* 返回 + 再来一次 */}
         <BottomActions
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -266,6 +228,11 @@ const floatUp = keyframes`
 const pulseGlow = keyframes`
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
   50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.7; }
+`
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 `
 
 // ========== Styled Components ==========
@@ -363,49 +330,47 @@ const ContentWrapper = styled.div`
   padding: 40px;
 `
 
-const VideoWrapper = styled(motion.div)`
+const MusicCard = styled(motion.div)`
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  max-width: 420px;
-  width: 100%;
+  width: 420px;
+  height: 82vh;
+  max-height: 780px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
+  border: 2px solid rgba(139, 92, 246, 0.35);
+  border-radius: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(139, 92, 246, 0.06);
+  overflow: hidden;
 `
 
-const VideoOverlay = styled.div`
+const LoadingOverlay = styled.div`
   position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+  inset: 0;
   display: flex;
-  gap: 12px;
-  z-index: 5;
-  opacity: 0.85;
-  transition: opacity 0.3s;
-
-  &:hover {
-    opacity: 1;
-  }
-`
-
-const OverlayBtn = styled(motion.button)`
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 16px;
+  color: ${COLORS.gold};
+  font-size: 1.1rem;
+  font-weight: 700;
+  z-index: 5;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
+`
+
+const LoadingSpinner = styled.div`
   width: 40px;
   height: 40px;
-  font-size: 1.1rem;
-  color: white;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
+  border: 3px solid rgba(251, 191, 36, 0.2);
+  border-top-color: ${COLORS.gold};
   border-radius: 50%;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: background 0.2s;
+  animation: ${spin} 0.8s linear infinite;
+`
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.7);
-  }
+const StyledIframe = styled.iframe`
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 32px;
 `
 
 const BottomActions = styled(motion.div)`

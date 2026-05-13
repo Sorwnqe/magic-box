@@ -58,11 +58,7 @@ export default function Stage6DetectiveTask({ onContinue, onBack }: Props) {
             <GiMagnifyingGlass />
           </IconArea>
 
-          <TaskTitle>思考</TaskTitle>
-
-          <TaskDesc>
-            淘气的年龄反过来就是奶奶的年龄，他两的年龄合起来是77岁，猜一猜淘气多少岁？
-          </TaskDesc>
+          <TaskTitle>你有哪些收获呢？</TaskTitle>
         </TaskCard>
 
         {/* 按钮 */}
@@ -178,15 +174,6 @@ const TaskTitle = styled.h1`
   -webkit-text-fill-color: transparent;
   margin: 0;
   text-align: center;
-`
-
-const TaskDesc = styled.p`
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: ${COLORS.textPrimary};
-  text-align: center;
-  line-height: 1.8;
-  margin: 0;
 `
 
 const ButtonRow = styled(motion.div)`
