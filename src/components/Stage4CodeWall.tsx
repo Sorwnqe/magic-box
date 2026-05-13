@@ -31,7 +31,7 @@ function makeRow(i: number) {
   }
 }
 
-const ROWS = Array.from({ length: 8 }, (_, i) => makeRow(i + 1))
+const ROWS = Array.from({ length: 6 }, (_, i) => makeRow(i + 1))
 
 interface Props {
   onContinue: () => void

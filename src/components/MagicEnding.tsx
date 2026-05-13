@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import styled from '@emotion/styled'
 import { keyframes } from '@emotion/react'
 import { playSuccess, playClick } from '../hooks/useSound'
-import { IoStar, IoChevronBack } from 'react-icons/io5'
+import { IoStar, IoChevronBack, IoPlay, IoPause } from 'react-icons/io5'
 
 interface MagicEndingProps {
   onRestart: () => void
   onBack?: () => void
 }
+/**
+ * suno提示词：
+ * create a cheerful kids nursery rhyme instrumental with bright playful melodies soft bouncy drums and a happy description vibe use colorful sounds like xylophone piano bells and nursery rhyme whistles with simple repeating patterns and catchy rhythm v4 5 all add light claps and gentle bass tempo around 90 110 bpm inspired by Children's Music, Educational style fun energetic and easy for introducing gemini kids to sing along
+ */
 
 // 彩带位置预设
 const CONFETTI_POSITIONS = [
@@ -80,17 +84,207 @@ const COLORS = {
   gold: '#fbbf24',
   accent: '#f59e0b',
   purple: '#8b5cf6',
+  goldLight: '#fde68a',
+  textPrimary: '#f8fafc',
+  textSecondary: '#94a3b8',
 }
 
-const DOUBAO_MUSIC_URL =
-  'https://www.doubao.com/music-sharing?vid=v0269cg10004d81sqj2ljht2j19g42a0&share_id=44803549375552514&task_id=0&source_type=web'
+// ========== 本地音频 + 歌词 ==========
+// 支持标准 LRC 格式歌词：[mm:ss.xx]歌词文本
+// 直接把 LRC 文本粘贴到 LRC_TEXT 里即可，代码会自动解析
+const AUDIO_SRC = '/audio/class.mp3'
+const COVER_SRC = '/class-full.png'
+
+// ↓↓↓ 把你的 LRC 歌词直接粘贴在这里 ↓↓↓
+const LRC_TEXT = `
+[ti:有趣的算式]
+[ar:石庆霞]
+[al:石庆霞]
+[by:东前进小学一年级-石庆霞]
+[00:01.20]作者：东前进小学一年级-石庆霞
+[00:04.41]数学魔盒变魔术
+[00:06.70]两位数字来跳舞
+[00:09.14]十位个位换位置
+[00:11.30]新的数字就变出
+[00:15.61]有趣算式真奇妙
+[00:17.85]交换数字有诀窍
+[00:20.03]个位十位加一加
+[00:22.25]数字相同真乖巧
+[00:26.83]和是四四五十五
+[00:29.16]九十九也难不倒
+[00:31.30]有序思考不重复
+[00:33.46]认真动脑学得好
+[00:37.94]竖着看 横着瞧
+[00:40.11]算式规律能找到
+[00:42.39]用耳朵 仔细听
+[00:44.64]用眼睛 认真瞧
+[00:46.82]开口说 用心想
+[00:49.04]我们都是聪明宝
+[01:02.43]有趣算式真奇妙
+[01:04.64]交换数字有诀窍
+[01:06.83]个位十位加一加
+[01:09.07]数字相同真乖巧
+[01:13.57]数学世界乐趣绕
+[01:15.74]善于观察多思考
+[01:17.79]开开心心学知识
+[01:20.01]快乐成长步步高
+
+[01:24.56]竖着看 横着瞧
+[01:26.74]算式规律能找到
+[01:29.02]用耳朵 仔细听
+[01:31.24]用眼睛 认真瞧
+[01:33.52]开口说 用心想
+[01:35.77]我们都是聪明宝
+[01:49.38]有趣算式真奇妙
+[01:51.31]交换数字有诀窍
+[01:53.53]个位十位加一加
+[01:55.82]数字相同真乖巧
+`
+
+// 解析 LRC 文本为 { time, text } 数组
+function parseLRC(lrc: string): { time: number; text: string }[] {
+  const lines = lrc.trim().split('\n')
+  const result: { time: number; text: string }[] = []
+  const regex = /^\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\](.*)$/
+
+  for (const line of lines) {
+    const match = line.trim().match(regex)
+    if (match) {
+      const m = parseInt(match[1], 10)
+      const s = parseInt(match[2], 10)
+      const msStr = match[3] || '0'
+      const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10)
+      const time = m * 60 + s + ms / 1000
+      const text = match[4].trim()
+      if (text) result.push({ time, text })
+    }
+  }
+
+  return result.sort((a, b) => a.time - b.time)
+}
+
+const LYRICS = parseLRC(LRC_TEXT)
+
+function formatTime(sec: number) {
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
 
 export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
-  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentLyricIndex, setCurrentLyricIndex] = useState(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const lyricRefs = useRef<(HTMLDivElement | null)[]>([])
+  const lyricContainerRef = useRef<HTMLDivElement | null>(null)
+  const topSpacerRef = useRef<HTMLDivElement | null>(null)
+  const bottomSpacerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     playSuccess()
   }, [])
+
+  // 动态设置上下 spacer 高度为容器的一半，确保歌词始终能居中
+  useEffect(() => {
+    const container = lyricContainerRef.current
+    const top = topSpacerRef.current
+    const bottom = bottomSpacerRef.current
+    if (!container || !top || !bottom) return
+
+    const update = () => {
+      const h = container.clientHeight / 2
+      top.style.height = `${h}px`
+      bottom.style.height = `${h}px`
+    }
+
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(container)
+    return () => ro.disconnect()
+  }, [])
+
+  // 播放/暂停
+  const togglePlay = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audio.paused) {
+      audio.play().catch(() => {})
+      setIsPlaying(true)
+    } else {
+      audio.pause()
+      setIsPlaying(false)
+    }
+  }
+
+  // 进度条拖动
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current
+    if (!audio) return
+    const t = Number(e.target.value)
+    audio.currentTime = t
+    setCurrentTime(t)
+  }
+
+  // 计算当前歌词行
+  const getLyricIndex = useCallback((time: number) => {
+    if (LYRICS.length === 0) return -1
+    let idx = 0
+    for (let i = 0; i < LYRICS.length; i++) {
+      if (time >= LYRICS[i].time) idx = i
+      else break
+    }
+    return idx
+  }, [])
+
+  // 歌词滚动到中间
+  const scrollLyricToCenter = useCallback((index: number) => {
+    const container = lyricContainerRef.current
+    const el = lyricRefs.current[index]
+    if (!container || !el) return
+    const containerH = container.clientHeight
+    const elTop = el.offsetTop
+    const elH = el.clientHeight
+    container.scrollTo({
+      top: elTop - containerH / 2 + elH / 2,
+      behavior: 'smooth',
+    })
+  }, [])
+
+  // 初始加载后把第一句滚动到中间
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (LYRICS.length > 0) {
+        scrollLyricToCenter(0)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [scrollLyricToCenter])
+
+  // timeupdate 事件
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const onTimeUpdate = () => {
+      setCurrentTime(audio.currentTime)
+      const idx = getLyricIndex(audio.currentTime)
+      if (idx !== currentLyricIndex && idx >= 0) {
+        setCurrentLyricIndex(idx)
+        scrollLyricToCenter(idx)
+      }
+    }
+    const onLoaded = () => setDuration(audio.duration || 0)
+    const onEnded = () => setIsPlaying(false)
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoaded)
+    audio.addEventListener('ended', onEnded)
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoaded)
+      audio.removeEventListener('ended', onEnded)
+    }
+  }, [currentLyricIndex, getLyricIndex, scrollLyricToCenter])
 
   const handleBack = () => {
     playClick()
@@ -172,18 +366,63 @@ export default function MagicEnding({ onRestart, onBack }: MagicEndingProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {!iframeLoaded && (
-            <LoadingOverlay>
-              <LoadingSpinner />
-              <span>正在加载音乐…</span>
-            </LoadingOverlay>
-          )}
-          <StyledIframe
-            src={DOUBAO_MUSIC_URL}
-            title="豆包音乐"
-            allow="autoplay; encrypted-media"
-            onLoad={() => setIframeLoaded(true)}
-          />
+          <audio ref={audioRef} src={AUDIO_SRC} preload="metadata" />
+
+          {/* 主体：左侧封面 + 右侧歌词 */}
+          <PlayerBody>
+            {/* 左侧：封面 + 歌曲信息 */}
+            <LeftPanel>
+              <CoverWrapper onClick={togglePlay}>
+                <CoverImage src={COVER_SRC} alt="歌曲封面" />
+              </CoverWrapper>
+              <SongInfo>
+                <SongTitle>有趣的算式之旅</SongTitle>
+                <SongAuthor>一年级石庆霞</SongAuthor>
+              </SongInfo>
+            </LeftPanel>
+
+            <PanelDivider />
+
+            {/* 右侧：歌词轮播 */}
+            <RightPanel>
+              <LyricContainer ref={lyricContainerRef}>
+                <LyricSpacer ref={topSpacerRef} />
+                {LYRICS.length === 0 && (
+                  <EmptyLyric>暂无歌词，请在代码中添加</EmptyLyric>
+                )}
+                {LYRICS.map((line, i) => (
+                  <LyricLine
+                    key={i}
+                    ref={el => { lyricRefs.current[i] = el }}
+                    $active={i === currentLyricIndex}
+                  >
+                    {line.text}
+                  </LyricLine>
+                ))}
+                <LyricSpacer ref={bottomSpacerRef} />
+              </LyricContainer>
+            </RightPanel>
+          </PlayerBody>
+
+          {/* 底部控制栏 */}
+          <PlayerControls>
+            <TimeLabel>{formatTime(currentTime)}</TimeLabel>
+            <ProgressBar
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+            />
+            <TimeLabel>{formatTime(duration)}</TimeLabel>
+            <PlayButtonSmall
+              onClick={togglePlay}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              {isPlaying ? <IoPause /> : <IoPlay />}
+            </PlayButtonSmall>
+          </PlayerControls>
         </MusicCard>
 
         {/* 返回 + 再来一次 */}
@@ -228,11 +467,6 @@ const floatUp = keyframes`
 const pulseGlow = keyframes`
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
   50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.7; }
-`
-
-const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 `
 
 // ========== Styled Components ==========
@@ -332,45 +566,209 @@ const ContentWrapper = styled.div`
 
 const MusicCard = styled(motion.div)`
   position: relative;
-  width: 420px;
-  height: 82vh;
-  max-height: 780px;
+  width: 720px;
+  height: 480px;
+  max-width: 90vw;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
   border: 2px solid rgba(139, 92, 246, 0.35);
   border-radius: 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(139, 92, 246, 0.06);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 `
 
-const LoadingOverlay = styled.div`
-  position: absolute;
-  inset: 0;
+const PlayerBody = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  padding: 32px 32px 16px;
+  gap: 24px;
+  min-height: 0;
+`
+
+const LeftPanel = styled.div`
+  width: 240px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: ${COLORS.gold};
-  font-size: 1.1rem;
-  font-weight: 700;
-  z-index: 5;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.97));
+  flex-shrink: 0;
 `
 
-const LoadingSpinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(251, 191, 36, 0.2);
-  border-top-color: ${COLORS.gold};
-  border-radius: 50%;
-  animation: ${spin} 0.8s linear infinite;
+const CoverWrapper = styled.div`
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid rgba(139, 92, 246, 0.35);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 24px rgba(139, 92, 246, 0.12);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: scale(1.04);
+    box-shadow: 0 14px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(139, 92, 246, 0.2);
+  }
 `
 
-const StyledIframe = styled.iframe`
+const CoverImage = styled.img`
   width: 100%;
   height: 100%;
+  object-fit: cover;
+`
+
+const SongInfo = styled.div`
+  text-align: center;
+`
+
+const SongTitle = styled.div`
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: ${COLORS.gold};
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 14px rgba(251, 191, 36, 0.2);
+`
+
+const SongAuthor = styled.div`
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: ${COLORS.textSecondary};
+  opacity: 0.75;
+`
+
+const PanelDivider = styled.div`
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(139, 92, 246, 0.3), transparent);
+  flex-shrink: 0;
+`
+
+const RightPanel = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+`
+
+const LyricContainer = styled.div`
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+`
+
+const LyricSpacer = styled.div`
+  flex-shrink: 0;
+`
+
+const EmptyLyric = styled.div`
+  color: ${COLORS.textSecondary};
+  font-size: 1rem;
+  opacity: 0.5;
+`
+
+const LyricLine = styled.div<{ $active: boolean }>`
+  font-size: ${props => props.$active ? '1.25rem' : '1rem'};
+  font-weight: ${props => props.$active ? '800' : '500'};
+  color: ${props => props.$active ? COLORS.goldLight : COLORS.textSecondary};
+  text-align: center;
+  line-height: 1.6;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-shadow: ${props => props.$active ? '0 0 20px rgba(251, 191, 36, 0.3)' : 'none'};
+  transform: ${props => props.$active ? 'scale(1.06)' : 'scale(1)'};
+`
+
+const PlayerControls = styled.div`
+  width: 100%;
+  padding: 12px 32px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+`
+
+const TimeLabel = styled.span`
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: ${COLORS.textSecondary};
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+`
+
+const ProgressBar = styled.input`
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: ${COLORS.gold};
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  &::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+  }
+  &::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: ${COLORS.gold};
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    cursor: pointer;
+    border: none;
+  }
+`
+
+const PlayButtonSmall = styled(motion.button)`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   border: none;
-  border-radius: 32px;
+  background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.purple});
+  color: white;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.5);
+  flex-shrink: 0;
+  svg { margin-left: 2px; }
 `
 
 const BottomActions = styled(motion.div)`
